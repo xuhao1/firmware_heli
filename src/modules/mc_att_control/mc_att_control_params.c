@@ -590,3 +590,14 @@ PARAM_DEFINE_FLOAT(MC_DTERM_CUTOFF, 30.f);
  */
 PARAM_DEFINE_INT32(MC_AIRMODE, 0);
 
+/**
+ * Helicopter fixed speed rotor
+ *
+ *
+ * @min 0.0
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.05
+ * @group Multicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_FIXED_SPEED, 0.7f);

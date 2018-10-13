@@ -97,6 +97,7 @@ px4_add_romfs_files(
 	14002_tri_y_yaw-
 	15001_coax_heli
 	16001_helicopter
+	16002_gaui450
 	50000_generic_ground_vehicle
 	50001_axialracing_ax10
 	50002_traxxas_stampede_2wd
