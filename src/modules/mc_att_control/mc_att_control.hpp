@@ -236,7 +236,10 @@ private:
 		(ParamFloat<px4::params::SENS_BOARD_Z_OFF>) _board_offset_z,
 
 		(ParamFloat<px4::params::VT_WV_YAWR_SCL>) _vtol_wv_yaw_rate_scale,		/**< Scale value [0, 1] for yaw rate setpoint  */
-		(ParamFloat<px4::params::HELI_FIXED_SPEED>) _heli_fixed_speed		/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamFloat<px4::params::HELI_FIXED_SPEED>) _heli_fixed_speed,		/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamFloat<px4::params::HELI_TRIM_AIL>) _heli_trim_ail,		/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamFloat<px4::params::HELI_TRIM_ELE>) _heli_trim_ele,		/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamFloat<px4::params::HELI_TRIM_RUD>) _heli_trim_rud		/**< Scale value [0, 1] for yaw rate setpoint  */
 	)
 
 	matrix::Vector3f _attitude_p;		/**< P gain for attitude control */

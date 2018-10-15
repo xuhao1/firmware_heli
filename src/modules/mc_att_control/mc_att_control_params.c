@@ -601,3 +601,39 @@ PARAM_DEFINE_INT32(MC_AIRMODE, 0);
  * @group Multicopter Attitude Control
  */
 PARAM_DEFINE_FLOAT(HELI_FIXED_SPEED, 0.7f);
+
+/**
+ * Helicopter trim aileron
+ *
+ *
+ * @min -1.0
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.05
+ * @group Multicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_TRIM_AIL, 0.0f);
+
+/**
+ * Helicopter trim elevator
+ *
+ *
+ * @min -1.0
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.05
+ * @group Multicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_TRIM_ELE, 0.0f);
+
+/**
+ * Helicopter trim rudder
+ *
+ *
+ * @min -1.0
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.05
+ * @group Multicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_TRIM_RUD, 0.0f);

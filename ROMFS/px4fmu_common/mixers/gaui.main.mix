@@ -35,7 +35,7 @@ Output 3 - Tail Servo Mixer
 Tail Servo = Yaw (control index = 2)
 
 M: 1
-S: 0 2  10000  10000      0 -10000  10000
+S: 0 2  -10000  -10000      0 -10000  10000
 
 
 Output 4 - Motor speed mixer

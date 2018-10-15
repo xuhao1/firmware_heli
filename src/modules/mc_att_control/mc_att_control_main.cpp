@@ -51,6 +51,7 @@
 #include <circuit_breaker/circuit_breaker.h>
 #include <mathlib/math/Limits.hpp>
 #include <mathlib/math/Functions.hpp>
+#include <systemlib/mavlink_log.h>
 
 #define MIN_TAKEOFF_THRUST    0.2f
 #define TPA_RATE_LOWER_LIMIT 0.05f
@@ -62,6 +63,8 @@
 
 using namespace matrix;
 
+orb_advert_t mavlink_log_pub = nullptr;
+#define HELI_MODE_ENABLE
 
 int MulticopterAttitudeControl::print_usage(const char *reason)
 {
@@ -737,24 +740,34 @@ MulticopterAttitudeControl::run()
 				}
 			}
 			
-			// _coll_sp = _thrust_sp;
-
+#ifdef HELI_MODE_ENABLE
 			//Here is param for fix speed rotor.
-			if (_v_control_mode.flag_armed)
+			if (_v_control_mode.flag_armed && _thrust_sp > 0.1f)
 			{
 				_speed_sp = _heli_fixed_speed.get();
 			}
 			else {
 				_speed_sp = 0;
 			}
+#endif
 			if (_v_control_mode.flag_control_rates_enabled) {
 				control_attitude_rates(dt);
 
 				/* publish actuator controls */
+				
+				_att_control(0) = _att_control(0) + _heli_trim_ail.get();
+				_att_control(1) = _att_control(1) + _heli_trim_ele.get();
+				_att_control(2) = _att_control(2) + _heli_trim_rud.get();
+
 				_actuators.control[0] = (PX4_ISFINITE(_att_control(0))) ? _att_control(0) : 0.0f;
 				_actuators.control[1] = (PX4_ISFINITE(_att_control(1))) ? _att_control(1) : 0.0f;
 				_actuators.control[2] = (PX4_ISFINITE(_att_control(2))) ? _att_control(2) : 0.0f;
 				
+				// mavlink_log_info(&mavlink_log_pub, "trim ail: %3.2f:%3.2f",
+					// (double) _heli_trim_ail.get(),
+					// (double) _att_control(0)
+				// );
+						
 				//For helicopter only, is coll now
 				_actuators.control[3] = (PX4_ISFINITE(_thrust_sp)) ? _thrust_sp : 0.0f;
 				_actuators.control[4] = (PX4_ISFINITE(_speed_sp)) ? _speed_sp : 0.0f;
@@ -764,12 +777,14 @@ MulticopterAttitudeControl::run()
 				_actuators.timestamp_sample = _sensor_gyro.timestamp;
 
 				/* scale effort by battery status */
+
+#ifndef HELI_MODE_ENABLE
 				if (_bat_scale_en.get() && _battery_status.scale > 0.0f) {
 					for (int i = 0; i < 4; i++) {
 						_actuators.control[i] *= _battery_status.scale;
 					}
 				}
-
+#endif
 				if (!_actuators_0_circuit_breaker_enabled) {
 					if (_actuators_0_pub != nullptr) {
 

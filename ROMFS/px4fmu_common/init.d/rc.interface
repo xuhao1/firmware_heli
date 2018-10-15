@@ -114,6 +114,11 @@ then
 	pwm disarmed -c 7 -p p:PWM_MAIN_DIS7
 	pwm disarmed -c 8 -p p:PWM_MAIN_DIS8
 
+	# For heli tail
+	pwm min -c 4 -p 460
+	pwm max -c 4 -p 1060
+	pwm disarmed -c 4 -p 760
+
 	if [ $FAILSAFE != none ]
 	then
 		pwm failsafe -d ${OUTPUT_DEV} ${FAILSAFE}
