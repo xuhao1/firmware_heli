@@ -119,6 +119,8 @@ then
 	pwm max -c 4 -p 1060
 	pwm disarmed -c 4 -p 760
 
+	pwm min -c 5 -p 1100
+	pwm max -c 5 -p 1900
 	if [ $FAILSAFE != none ]
 	then
 		pwm failsafe -d ${OUTPUT_DEV} ${FAILSAFE}

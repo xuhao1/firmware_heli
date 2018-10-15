@@ -637,3 +637,42 @@ PARAM_DEFINE_FLOAT(HELI_TRIM_ELE, 0.0f);
  * @group Multicopter Attitude Control
  */
 PARAM_DEFINE_FLOAT(HELI_TRIM_RUD, 0.0f);
+
+
+/**
+ * Helicopter coll max
+ *
+ *
+ * @min -3.0
+ * @max 3.0
+ * @decimal 2
+ * @increment 0.05
+ * @group Multicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_COLL_MAX, 1.0f);
+
+/**
+ * Helicopter coll max
+ *
+ *
+ * @min -3.0
+ * @max 3.0
+ * @decimal 2
+ * @increment 0.05
+ * @group Multicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_COLL_MIN, -1.0f);
+
+/**
+ * HELI ROTOR SPEED MODE
+ *
+ * The default uses fix rotor speed
+ * If parameter use rotor speed from AUX2
+ *
+ * @group Commander
+ * @min 0
+ * @max 1
+ * @value 0 Rotor speed fixed
+ * @value 1 Rotor speed from AUX2
+ */
+PARAM_DEFINE_INT32(HELI_ROTSPD_MODE, 1);

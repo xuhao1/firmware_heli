@@ -742,9 +742,13 @@ MulticopterAttitudeControl::run()
 			
 #ifdef HELI_MODE_ENABLE
 			//Here is param for fix speed rotor.
-			if (_v_control_mode.flag_armed && _thrust_sp > 0.1f)
+			if (_v_control_mode.flag_armed)
 			{
-				_speed_sp = _heli_fixed_speed.get();
+				if (_heli_rotor_speed_mode.get() == 0)
+					_speed_sp = _heli_fixed_speed.get();
+				else {
+					_speed_sp = (_manual_control_sp.aux2 + 1.0f) * 0.5f;
+				}
 			}
 			else {
 				_speed_sp = 0;
@@ -754,11 +758,12 @@ MulticopterAttitudeControl::run()
 				control_attitude_rates(dt);
 
 				/* publish actuator controls */
-				
+
+#ifdef HELI_MODE_ENABLE			
 				_att_control(0) = _att_control(0) + _heli_trim_ail.get();
 				_att_control(1) = _att_control(1) + _heli_trim_ele.get();
 				_att_control(2) = _att_control(2) + _heli_trim_rud.get();
-
+#endif
 				_actuators.control[0] = (PX4_ISFINITE(_att_control(0))) ? _att_control(0) : 0.0f;
 				_actuators.control[1] = (PX4_ISFINITE(_att_control(1))) ? _att_control(1) : 0.0f;
 				_actuators.control[2] = (PX4_ISFINITE(_att_control(2))) ? _att_control(2) : 0.0f;
@@ -769,8 +774,17 @@ MulticopterAttitudeControl::run()
 				// );
 						
 				//For helicopter only, is coll now
+
+#ifdef HELI_MODE_ENABLE			
+				float coll_max = _heli_coll_max.get();
+				float coll_min = _heli_coll_min.get();
+				_thrust_sp = (coll_max - coll_min) * _thrust_sp + coll_min;
+
+				_actuators.control[3] = (PX4_ISFINITE(_speed_sp)) ? _speed_sp : 0.0f;
+				_actuators.control[4] = (PX4_ISFINITE(_thrust_sp)) ? _thrust_sp : 0.0f;
+#else
 				_actuators.control[3] = (PX4_ISFINITE(_thrust_sp)) ? _thrust_sp : 0.0f;
-				_actuators.control[4] = (PX4_ISFINITE(_speed_sp)) ? _speed_sp : 0.0f;
+#endif
 				
 				_actuators.control[7] = _v_att_sp.landing_gear;
 				_actuators.timestamp = hrt_absolute_time();

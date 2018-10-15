@@ -239,7 +239,10 @@ private:
 		(ParamFloat<px4::params::HELI_FIXED_SPEED>) _heli_fixed_speed,		/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamFloat<px4::params::HELI_TRIM_AIL>) _heli_trim_ail,		/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamFloat<px4::params::HELI_TRIM_ELE>) _heli_trim_ele,		/**< Scale value [0, 1] for yaw rate setpoint  */
-		(ParamFloat<px4::params::HELI_TRIM_RUD>) _heli_trim_rud		/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamFloat<px4::params::HELI_TRIM_RUD>) _heli_trim_rud,		/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamFloat<px4::params::HELI_COLL_MIN>) _heli_coll_min,	/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamFloat<px4::params::HELI_COLL_MAX>) _heli_coll_max,	/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamInt<px4::params::HELI_ROTSPD_MODE>) _heli_rotor_speed_mode		/**< Scale value [0, 1] for yaw rate setpoint  */
 	)
 
 	matrix::Vector3f _attitude_p;		/**< P gain for attitude control */
