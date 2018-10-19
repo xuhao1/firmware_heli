@@ -600,7 +600,7 @@ PARAM_DEFINE_INT32(MC_AIRMODE, 0);
  * @increment 0.05
  * @group Multicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_FIXED_SPEED, 0.7f);
+//PARAM_DEFINE_FLOAT(HELI_FIXED_SPEED, 0.7f);
 
 /**
  * Helicopter trim aileron
@@ -612,7 +612,7 @@ PARAM_DEFINE_FLOAT(HELI_FIXED_SPEED, 0.7f);
  * @increment 0.05
  * @group Multicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_TRIM_AIL, 0.0f);
+//PARAM_DEFINE_FLOAT(HELI_TRIM_AIL, 0.0f);
 
 /**
  * Helicopter trim elevator
@@ -624,7 +624,7 @@ PARAM_DEFINE_FLOAT(HELI_TRIM_AIL, 0.0f);
  * @increment 0.05
  * @group Multicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_TRIM_ELE, 0.0f);
+//PARAM_DEFINE_FLOAT(HELI_TRIM_ELE, 0.0f);
 
 /**
  * Helicopter trim rudder
@@ -636,7 +636,7 @@ PARAM_DEFINE_FLOAT(HELI_TRIM_ELE, 0.0f);
  * @increment 0.05
  * @group Multicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_TRIM_RUD, 0.0f);
+//PARAM_DEFINE_FLOAT(HELI_TRIM_RUD, 0.0f);
 
 
 /**
@@ -649,7 +649,7 @@ PARAM_DEFINE_FLOAT(HELI_TRIM_RUD, 0.0f);
  * @increment 0.05
  * @group Multicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_COLL_MAX, 1.0f);
+//PARAM_DEFINE_FLOAT(HELI_COLL_MAX, 1.0f);
 
 /**
  * Helicopter coll max
@@ -661,7 +661,7 @@ PARAM_DEFINE_FLOAT(HELI_COLL_MAX, 1.0f);
  * @increment 0.05
  * @group Multicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_COLL_MIN, -1.0f);
+//PARAM_DEFINE_FLOAT(HELI_COLL_MIN, -1.0f);
 
 /**
  * HELI ROTOR SPEED MODE
@@ -675,4 +675,4 @@ PARAM_DEFINE_FLOAT(HELI_COLL_MIN, -1.0f);
  * @value 0 Rotor speed fixed
  * @value 1 Rotor speed from AUX2
  */
-PARAM_DEFINE_INT32(HELI_ROTSPD_MODE, 1);
+//PARAM_DEFINE_INT32(HELI_ROTSPD_MODE, 1);
