@@ -63,7 +63,6 @@
 
 using namespace matrix;
 
-orb_advert_t mavlink_log_pub = nullptr;
 #define HELI_MODE_ENABLE
 
 int MulticopterAttitudeControl::print_usage(const char *reason)
@@ -467,6 +466,22 @@ Vector3f
 MulticopterAttitudeControl::pid_attenuations(float tpa_breakpoint, float tpa_rate)
 {
 	/* throttle pid attenuation factor */
+#ifdef HELI_MODE_ENABLE
+	float rate = 1.665f;
+	if (_speed_sp > 0.3f)
+	{
+		rate = fminf(1.0f, 1/fabsf(_speed_sp)) / 2.0f;
+	}
+
+	Vector3f pidAttenuationPerAxis;
+	pidAttenuationPerAxis(AXIS_INDEX_ROLL) = rate;
+	pidAttenuationPerAxis(AXIS_INDEX_PITCH) = rate;
+
+	//Yaw control also needs this for heli
+	pidAttenuationPerAxis(AXIS_INDEX_YAW) = rate;
+	return pidAttenuationPerAxis;
+
+#else
 	float tpa = 1.0f - tpa_rate * (fabsf(_v_rates_sp.thrust) - tpa_breakpoint) / (1.0f - tpa_breakpoint);
 	tpa = fmaxf(TPA_RATE_LOWER_LIMIT, fminf(1.0f, tpa));
 
@@ -474,8 +489,7 @@ MulticopterAttitudeControl::pid_attenuations(float tpa_breakpoint, float tpa_rat
 	pidAttenuationPerAxis(AXIS_INDEX_ROLL) = tpa;
 	pidAttenuationPerAxis(AXIS_INDEX_PITCH) = tpa;
 	pidAttenuationPerAxis(AXIS_INDEX_YAW) = 1.0;
-
-	return pidAttenuationPerAxis;
+#endif
 }
 
 /*
@@ -768,13 +782,6 @@ MulticopterAttitudeControl::run()
 				_actuators.control[1] = (PX4_ISFINITE(_att_control(1))) ? _att_control(1) : 0.0f;
 				_actuators.control[2] = (PX4_ISFINITE(_att_control(2))) ? _att_control(2) : 0.0f;
 				
-				// mavlink_log_info(&mavlink_log_pub, "trim ail: %3.2f:%3.2f",
-					// (double) _heli_trim_ail.get(),
-					// (double) _att_control(0)
-				// );
-						
-				//For helicopter only, is coll now
-
 #ifdef HELI_MODE_ENABLE			
 				float coll_max = _heli_coll_max.get();
 				float coll_min = _heli_coll_min.get();
