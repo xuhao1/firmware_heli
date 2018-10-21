@@ -564,10 +564,38 @@ PARAM_DEFINE_FLOAT(HELI_COLL_MIN, -0.2f);
  * The default uses fix rotor speed
  * If parameter use rotor speed from AUX2
  *
- * @group Commander
  * @min 0
  * @max 1
  * @value 0 Rotor speed fixed
  * @value 1 Rotor speed from AUX2
+ * @group Helicopter Attitude Control
  */
 PARAM_DEFINE_INT32(HELI_ROTSPD_MODE, 1);
+
+/**
+ * HELI TRIM ROLL ANGLE
+ *
+ * Trim pitch so can hover
+ *
+ *
+ * @min -30.0
+ * @max 30.0
+ * @decimal 2
+ * @increment 0.05
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_INT32(HELI_HOVER_ROLL, 0);
+
+
+/**
+ * HELI TRIM PITCH ANGLE
+ *
+ *  Trim roll so can hover
+ *
+ * @min -30.0
+ * @max 30.0
+ * @decimal 2
+ * @increment 0.05
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_INT32(HELI_HOVER_PITCH, 0);

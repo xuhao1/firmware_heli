@@ -12,7 +12,8 @@
 #include <mathlib/math/Functions.hpp>
 #include <systemlib/mavlink_log.h>
 
-#define MIN_TAKEOFF_THRUST    0.2f
+#define MIN_TAKEOFF_COLL    0.2f
+#define MIN_TAKEOFF_SPEED    0.3f
 
 #define AXIS_INDEX_ROLL 0
 #define AXIS_INDEX_PITCH 1
@@ -370,10 +371,11 @@ HelicopterAttitudeControl::control_attitude(float dt)
 Vector3f
 HelicopterAttitudeControl::pid_attenuations(float speed_sp)
 {
-    float rate = 1.25f;
+    float rate = 1.78f;
 	if (speed_sp > 0.4f)
 	{
-		rate = fminf(1.0f, 1/fabsf(speed_sp)) / 2.0f;
+        //We trim our pid on rotor speed 1.4
+		rate = fminf(1.0f, 1/fabsf(speed_sp)) / 1.4f;
 	}
 
 	Vector3f pidAttenuationPerAxis;
@@ -381,7 +383,7 @@ HelicopterAttitudeControl::pid_attenuations(float speed_sp)
 	pidAttenuationPerAxis(AXIS_INDEX_PITCH) = rate;
 
 	//Yaw control also needs this for heli
-	pidAttenuationPerAxis(AXIS_INDEX_YAW) = rate;
+	pidAttenuationPerAxis(AXIS_INDEX_YAW) = rate*rate;
 	return pidAttenuationPerAxis;
 }
 
@@ -453,7 +455,7 @@ HelicopterAttitudeControl::control_attitude_rates(float dt)
 
 
     /* update integral only if motors are providing enough thrust to be effective */
-    if (_coll_sp > MIN_TAKEOFF_THRUST) {
+    if (_coll_sp > MIN_TAKEOFF_COLL && _rotor_speed_sp > MIN_TAKEOFF_SPEED) {
         for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
             // Perform the integration using a first order method and do not propagate the result if out of range or invalid
             float rate_i = _rates_int(i) + rates_i_scaled(i) * rates_err(i) * dt;
