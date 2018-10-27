@@ -573,6 +573,18 @@ PARAM_DEFINE_FLOAT(HELI_COLL_MIN, -0.2f);
 PARAM_DEFINE_INT32(HELI_ROTSPD_MODE, 1);
 
 /**
+ * HELI CALIB SERVO MODE
+ *
+ *
+ * @min 0
+ * @max 1
+ * @value 0 Servo move normally
+ * @value 1 Servo fixed to install.
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_INT32(HELI_CALIB_SERVO, 0);
+
+/**
  * HELI TRIM ROLL ANGLE
  *
  * Trim pitch so can hover
