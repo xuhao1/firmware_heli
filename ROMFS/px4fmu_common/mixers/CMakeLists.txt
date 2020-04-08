@@ -86,4 +86,5 @@ px4_add_romfs_files(
 	vtol_delta.aux.mix
 	wingwing.main.mix
 	zmr250.main.mix
+	gaui.main.mix
 )

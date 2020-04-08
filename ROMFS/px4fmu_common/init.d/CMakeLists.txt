@@ -41,6 +41,8 @@ px4_add_romfs_files(
 	rc.logging
 	rc.mc_apps
 	rc.mc_defaults
+	rc.heli_apps
+	rc.heli_defaults
 	rcS
 	rc.sensors
 	rc.thermal_cal

@@ -84,6 +84,29 @@ then
 	sh /etc/init.d/rc.mc_apps
 fi
 
+if [ $VEHICLE_TYPE == heli ]
+then
+	if [ $MIXER == none ]
+	then
+		# Set default mixer for fixed wing if not defined
+		set MIXER gaui
+	fi
+
+	if [ $MAV_TYPE == none ]
+	then
+		set MAV_TYPE 4
+	fi
+
+	param set MAV_TYPE ${MAV_TYPE}
+
+	# Load mixer and configure outputs
+	sh /etc/init.d/rc.interface
+
+	# Start standard fixedwing apps
+	sh /etc/init.d/rc.heli_apps
+fi
+
+
 #
 # UGV setup.
 #
