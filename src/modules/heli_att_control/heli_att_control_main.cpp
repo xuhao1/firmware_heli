@@ -123,6 +123,8 @@ HelicopterAttitudeControl::parameters_updated()
     _acro_rate_max(1) = math::radians(_acro_pitch_max.get());
     _acro_rate_max(2) = math::radians(_acro_yaw_max.get());
 
+	_man_tilt_max = math::radians(_param_mpc_man_tilt_max.get());
+
     _actuators_0_circuit_breaker_enabled = circuit_breaker_enabled("CBRK_RATE_CTRL", CBRK_RATE_CTRL_KEY);
 
     /* get transformation matrix from sensor/board to body frame */
@@ -165,11 +167,7 @@ HelicopterAttitudeControl::vehicle_status_poll()
 	if (_vehicle_status_sub.update(&_vehicle_status)) {
 		/* set correct uORB ID, depending on if vehicle is VTOL or not */
 		if (_actuators_id == nullptr) {
-			if (_vehicle_status.is_vtol) {
-				_actuators_id = ORB_ID(actuator_controls_virtual_mc);
-			} else {
 				_actuators_id = ORB_ID(actuator_controls_0);
-			}
 		}
 	}
 }
@@ -386,12 +384,27 @@ HelicopterAttitudeControl::Run()
         /* check for updates in other topics */
         _v_control_mode_sub.update(&_v_control_mode);
         _manual_control_sp_sub.update(&_manual_control_sp);
+		_vehicle_land_detected_sub.update(&_vehicle_land_detected);
 
         vehicle_status_poll();
         vehicle_attitude_poll();;
 
         if (_v_control_mode.flag_control_attitude_enabled) {
             // mavlink_log_info(&_mavlink_log_pub, "Attitude Control Enabled");
+
+            // reset yaw setpoint during transitions, tailsitter.cpp generates
+			// attitude setpoint for the transition
+
+
+            if (_v_control_mode.flag_control_manual_enabled &&
+				    !_v_control_mode.flag_control_altitude_enabled &&
+				    !_v_control_mode.flag_control_velocity_enabled &&
+				    !_v_control_mode.flag_control_position_enabled) {
+					generate_attitude_setpoint(dt, _reset_yaw_sp);
+                    _reset_yaw_sp = _vehicle_land_detected.landed;
+            } else {
+                _reset_yaw_sp = true;
+            }
 
             control_attitude(dt);
 
@@ -528,6 +541,68 @@ HelicopterAttitudeControl::Run()
         parameter_update_poll();
     }
     perf_end(_loop_perf);
+}
+
+
+void
+HelicopterAttitudeControl::generate_attitude_setpoint(float dt, bool reset_yaw_sp)
+{
+	vehicle_attitude_setpoint_s attitude_setpoint{};
+	const float yaw = Eulerf(Quatf(_v_att.q)).psi();
+    if (reset_yaw_sp) {
+		_man_yaw_sp = yaw;
+
+	} else if (_manual_control_sp.z > 0.05f) {
+		const float yaw_rate = math::radians(_acro_yaw_max.get());
+		attitude_setpoint.yaw_sp_move_rate = _manual_control_sp.r * yaw_rate;
+		_man_yaw_sp = wrap_pi(_man_yaw_sp + attitude_setpoint.yaw_sp_move_rate * dt);
+	}
+
+	/*
+	 * Input mapping for roll & pitch setpoints
+	 * ----------------------------------------
+	 * We control the following 2 angles:
+	 * - tilt angle, given by sqrt(x*x + y*y)
+	 * - the direction of the maximum tilt in the XY-plane, which also defines the direction of the motion
+	 *
+	 * This allows a simple limitation of the tilt angle, the vehicle flies towards the direction that the stick
+	 * points to, and changes of the stick input are linear.
+	 */
+	const float x = _manual_control_sp.x * _man_tilt_max;
+	const float y = _manual_control_sp.y * _man_tilt_max;
+
+	// we want to fly towards the direction of (x, y), so we use a perpendicular axis angle vector in the XY-plane
+	Vector2f v = Vector2f(y, -x);
+	float v_norm = v.norm(); // the norm of v defines the tilt angle
+
+	if (v_norm > _man_tilt_max) { // limit to the configured maximum tilt angle
+		v *= _man_tilt_max / v_norm;
+	}
+
+	Quatf q_sp_rpy = AxisAnglef(v(0), v(1), 0.f);
+	Eulerf euler_sp = q_sp_rpy;
+	attitude_setpoint.roll_body = euler_sp(0);
+	attitude_setpoint.pitch_body = euler_sp(1);
+	// The axis angle can change the yaw as well (noticeable at higher tilt angles).
+	// This is the formula by how much the yaw changes:
+	//   let a := tilt angle, b := atan(y/x) (direction of maximum tilt)
+	//   yaw = atan(-2 * sin(b) * cos(b) * sin^2(a/2) / (1 - 2 * cos^2(b) * sin^2(a/2))).
+	attitude_setpoint.yaw_body = _man_yaw_sp + euler_sp(2);
+
+	/* copy quaternion setpoint to attitude setpoint topic */
+	Quatf q_sp = Eulerf(attitude_setpoint.roll_body, attitude_setpoint.pitch_body, attitude_setpoint.yaw_body);
+	q_sp.copyTo(attitude_setpoint.q_d);
+	attitude_setpoint.q_d_valid = true;
+
+	attitude_setpoint.thrust_body[2] = -_manual_control_sp.z;
+	attitude_setpoint.timestamp = hrt_absolute_time();
+
+    orb_publish_auto(ORB_ID(vehicle_attitude_setpoint), &_vehicle_attitude_setpoint_pub, &attitude_setpoint, nullptr, ORB_PRIO_DEFAULT);
+
+    /*
+	_landing_gear.landing_gear = get_landing_gear_state();
+	_landing_gear.timestamp = hrt_absolute_time();
+	_landing_gear_pub.publish(_landing_gear);*/
 }
 
 

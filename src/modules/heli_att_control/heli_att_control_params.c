@@ -292,7 +292,7 @@ PARAM_DEFINE_FLOAT(HELI_YAW_FF, 0.5f);
  * @increment 5
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_ROLRATE_MAX, 220.0f);
+PARAM_DEFINE_FLOAT(HELI_ROLRATE_MAX, 360.0f);
 
 /**
  * Max pitch rate
@@ -311,7 +311,7 @@ PARAM_DEFINE_FLOAT(HELI_ROLRATE_MAX, 220.0f);
  * @increment 5
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_PITRATE_MAX, 220.0f);
+PARAM_DEFINE_FLOAT(HELI_PITRATE_MAX, 360.0f);
 
 /**
  * Max yaw rate
@@ -323,7 +323,7 @@ PARAM_DEFINE_FLOAT(HELI_PITRATE_MAX, 220.0f);
  * @increment 5
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_YAWRATE_MAX, 300.0f);
+PARAM_DEFINE_FLOAT(HELI_YAWRATE_MAX, 360.0f);
 
 /**
  * Max yaw rate in auto mode
@@ -351,7 +351,7 @@ PARAM_DEFINE_FLOAT(HELI_YAWRAUT_MAX, 45.0f);
  * @increment 5
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_ACRO_R_MAX, 720.0f);
+PARAM_DEFINE_FLOAT(HELI_ACRO_R_MAX, 300.0f);
 
 /**
  * Max acro pitch rate
@@ -364,7 +364,7 @@ PARAM_DEFINE_FLOAT(HELI_ACRO_R_MAX, 720.0f);
  * @increment 5
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_ACRO_P_MAX, 720.0f);
+PARAM_DEFINE_FLOAT(HELI_ACRO_P_MAX, 300.0f);
 
 /**
  * Max acro yaw rate
@@ -377,7 +377,7 @@ PARAM_DEFINE_FLOAT(HELI_ACRO_P_MAX, 720.0f);
  * @increment 5
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_ACRO_Y_MAX, 540.0f);
+PARAM_DEFINE_FLOAT(HELI_ACRO_Y_MAX, 300.0f);
 
 /**
  * Acro mode Expo factor for Roll and Pitch.
@@ -392,7 +392,7 @@ PARAM_DEFINE_FLOAT(HELI_ACRO_Y_MAX, 540.0f);
  * @decimal 2
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_ACRO_EXPO, 0.69f);
+PARAM_DEFINE_FLOAT(HELI_ACRO_EXPO, 0.0f);
 
 /**
  * Acro mode Expo factor for Yaw.
@@ -407,7 +407,7 @@ PARAM_DEFINE_FLOAT(HELI_ACRO_EXPO, 0.69f);
  * @decimal 2
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_ACRO_EXPO_Y, 0.69f);
+PARAM_DEFINE_FLOAT(HELI_ACRO_EXPO_Y, 0.0f);
 
 /**
  * Acro mode SuperExpo factor for Roll and Pitch.
@@ -423,7 +423,7 @@ PARAM_DEFINE_FLOAT(HELI_ACRO_EXPO_Y, 0.69f);
  * @decimal 2
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_ACRO_SUPEXP, 0.7f);
+PARAM_DEFINE_FLOAT(HELI_ACRO_SUPEXP, 0.0f);
 
 /**
  * Acro mode SuperExpo factor for Yaw.
@@ -439,7 +439,7 @@ PARAM_DEFINE_FLOAT(HELI_ACRO_SUPEXP, 0.7f);
  * @decimal 2
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_ACRO_SUPEXY, 0.7f);
+PARAM_DEFINE_FLOAT(HELI_ACRO_SUPEXY, 0.0f);
 
 /**
  * Threshold for Rattitude mode

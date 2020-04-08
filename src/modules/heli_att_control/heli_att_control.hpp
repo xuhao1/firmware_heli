@@ -55,6 +55,7 @@
 #include <uORB/topics/vehicle_rates_setpoint.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/vehicle_angular_velocity.h>
+#include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/Subscription.hpp>
 #include <px4_platform_common/px4_work_queue/WorkItem.hpp>
 #include <uORB/SubscriptionCallback.hpp>
@@ -124,6 +125,8 @@ private:
 	 */
 	matrix::Vector3f pid_attenuations(float _speed);
 
+	void generate_attitude_setpoint(float dt, bool reset_yaw_sp);
+
 
 	uORB::Subscription _v_att_sub{ORB_ID(vehicle_attitude)};			/**< vehicle attitude subscription */
 	uORB::Subscription _v_att_sp_sub{ORB_ID(vehicle_attitude_setpoint)};		/**< vehicle attitude setpoint subscription */
@@ -132,16 +135,16 @@ private:
 	uORB::Subscription _manual_control_sp_sub{ORB_ID(manual_control_setpoint)};	/**< manual control setpoint subscription */
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};			/**< vehicle status subscription */
 	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};		/**< parameter updates subscription */
+	uORB::Subscription _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};	/**< vehicle land detected subscription */
 
 	uORB::SubscriptionCallbackWorkItem _vehicle_angular_velocity_sub{this, ORB_ID(vehicle_angular_velocity)};
-
 	unsigned _gyro_count{1};
 	int _selected_gyro{0};
 
 	orb_advert_t	_v_rates_sp_pub{nullptr};		/**< rate setpoint publication */
 	orb_advert_t	_actuators_0_pub{nullptr};		/**< attitude actuator controls publication */
 	orb_advert_t	_controller_status_pub{nullptr};	/**< controller status publication */
-
+	orb_advert_t 	_vehicle_attitude_setpoint_pub{nullptr};
 	orb_id_t _rates_sp_id{nullptr};		/**< pointer to correct rates setpoint uORB metadata structure */
 	orb_id_t _actuators_id{nullptr};	/**< pointer to correct actuator controls0 uORB metadata structure */
 
@@ -155,6 +158,7 @@ private:
 	struct actuator_controls_s		_actuators {};		/**< actuator controls */
 	struct vehicle_status_s			_vehicle_status {};	/**< vehicle status */
 	struct battery_status_s			_battery_status {};	/**< battery status */
+	struct vehicle_land_detected_s		_vehicle_land_detected {};
 
 	perf_counter_t	_loop_perf;			/**< loop performance counter */
 
@@ -169,6 +173,11 @@ private:
 	float _coll_sp;				/**< collective setpoint, which is really thrust for heli */
 	float _rotor_speed_sp;                /*rotor speed setpoint, should be fixed when flying*/
 	float _actual_coll_sp;
+	float _man_yaw_sp;
+
+	bool _reset_yaw_sp;
+	float _man_tilt_max;
+
 	matrix::Vector3f _att_control;			/**< attitude control vector */
 	hrt_abstime _task_start{hrt_absolute_time()};
 	hrt_abstime _last_run{0};
@@ -231,7 +240,9 @@ private:
 		(ParamFloat<px4::params::HELI_COLL_MIN>) _heli_coll_min,	/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamFloat<px4::params::HELI_COLL_MAX>) _heli_coll_max,	/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamInt<px4::params::HELI_ROTSPD_MODE>) _heli_rotor_speed_mode,		/**< Scale value [0, 1] for yaw rate setpoint  */
-		(ParamInt<px4::params::HELI_CALIB_SERVO>) _heli_calib_servo		/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamInt<px4::params::HELI_CALIB_SERVO>) _heli_calib_servo,		/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamFloat<px4::params::MPC_MAN_TILT_MAX>) _param_mpc_man_tilt_max			/**< maximum tilt allowed for manual flight */
+
 	)
 
 	matrix::Vector3f _attitude_p;		/**< P gain for attitude control */
