@@ -41,16 +41,13 @@ Helicopter attitude control code
 }
 HelicopterAttitudeControl::HelicopterAttitudeControl():
     ModuleParams(nullptr),
+	WorkItem(MODULE_NAME, px4::wq_configurations::rate_ctrl),
     _loop_perf(perf_alloc(PC_ELAPSED, "heli_att_control")),
     _lp_filters{
             {initial_update_rate_hz, 50.f},
             {initial_update_rate_hz, 50.f},
             {initial_update_rate_hz, 50.f}}
 {
-    for (uint8_t i = 0; i < MAX_GYRO_COUNT; i++) {
-        _sensor_gyro_sub[i] = -1;
-    }
-
     // _vehicle_status.is_rotary_wing = true;
 
     /* initialize quaternions in messages to be valid */
@@ -65,13 +62,9 @@ HelicopterAttitudeControl::HelicopterAttitudeControl():
     _coll_sp = 0.0f;
     _att_control.zero();
 
-    /* initialize thermal corrections as we might not immediately get a topic update (only non-zero values) */
-    for (unsigned i = 0; i < 3; i++) {
-        // used scale factors to unity
-        _sensor_correction.gyro_scale_0[i] = 1.0f;
-        _sensor_correction.gyro_scale_1[i] = 1.0f;
-        _sensor_correction.gyro_scale_2[i] = 1.0f;
-    }
+    if (!_vehicle_angular_velocity_sub.registerCallback()) {
+		PX4_ERR("vehicle_angular_velocity callback registration failed!");
+	}
 
     parameters_updated();
 }
@@ -147,130 +140,54 @@ HelicopterAttitudeControl::parameters_updated()
 void
 HelicopterAttitudeControl::parameter_update_poll()
 {
-    bool updated;
+	// check for parameter updates
+	if (_parameter_update_sub.updated()) {
+		// clear update
+		parameter_update_s pupdate;
+		_parameter_update_sub.copy(&pupdate);
 
-    /* Check if parameters have changed */
-    orb_check(_params_sub, &updated);
-
-    if (updated) {
-        struct parameter_update_s param_update;
-        orb_copy(ORB_ID(parameter_update), _params_sub, &param_update);
-        updateParams();
-        parameters_updated();
-    }
-}
-
-void
-HelicopterAttitudeControl::vehicle_control_mode_poll()
-{
-    bool updated;
-
-    /* Check if vehicle control mode has changed */
-    orb_check(_v_control_mode_sub, &updated);
-
-    if (updated) {
-        orb_copy(ORB_ID(vehicle_control_mode), _v_control_mode_sub, &_v_control_mode);
-    }
-}
-
-void
-HelicopterAttitudeControl::vehicle_manual_poll()
-{
-    bool updated;
-
-    /* get pilots inputs */
-    orb_check(_manual_control_sp_sub, &updated);
-
-    if (updated) {
-        orb_copy(ORB_ID(manual_control_setpoint), _manual_control_sp_sub, &_manual_control_sp);
-    }
+		// update parameters from storage
+		updateParams();
+		parameters_updated();
+	}
 }
 
 void
 HelicopterAttitudeControl::vehicle_attitude_setpoint_poll()
 {
-    /* check if there is a new setpoint */
-    bool updated;
-    orb_check(_v_att_sp_sub, &updated);
-
-    if (updated) {
-        orb_copy(ORB_ID(vehicle_attitude_setpoint), _v_att_sp_sub, &_v_att_sp);
-    }
-}
-
-void
-HelicopterAttitudeControl::vehicle_rates_setpoint_poll()
-{
-    /* check if there is a new setpoint */
-    bool updated;
-    orb_check(_v_rates_sp_sub, &updated);
-
-    if (updated) {
-        orb_copy(ORB_ID(vehicle_rates_setpoint), _v_rates_sp_sub, &_v_rates_sp);
-    }
+	_v_att_sp_sub.update(&_v_att_sp);
 }
 
 void
 HelicopterAttitudeControl::vehicle_status_poll()
 {
-    /* check if there is new status information */
-    bool vehicle_status_updated;
-    orb_check(_vehicle_status_sub, &vehicle_status_updated);
-
-    if (vehicle_status_updated) {
-        orb_copy(ORB_ID(vehicle_status), _vehicle_status_sub, &_vehicle_status);
-
-        /* set correct uORB ID, depending on if vehicle is VTOL or not */
-        if (_rates_sp_id == nullptr) {
-            _rates_sp_id = ORB_ID(vehicle_rates_setpoint);
-            _actuators_id = ORB_ID(actuator_controls_0);
-        }
-    }
+	/* check if there is new status information */
+	if (_vehicle_status_sub.update(&_vehicle_status)) {
+		/* set correct uORB ID, depending on if vehicle is VTOL or not */
+		if (_actuators_id == nullptr) {
+			if (_vehicle_status.is_vtol) {
+				_actuators_id = ORB_ID(actuator_controls_virtual_mc);
+			} else {
+				_actuators_id = ORB_ID(actuator_controls_0);
+			}
+		}
+	}
 }
 
 void
 HelicopterAttitudeControl::vehicle_attitude_poll()
 {
-    /* check if there is a new message */
-    bool updated;
-    orb_check(_v_att_sub, &updated);
+	/* check if there is a new message */
+	const uint8_t prev_quat_reset_counter = _v_att.quat_reset_counter;
 
-    if (updated) {
-        orb_copy(ORB_ID(vehicle_attitude), _v_att_sub, &_v_att);
-    }
+	if (_v_att_sub.update(&_v_att)) {
+		// Check for a heading reset
+		if (prev_quat_reset_counter != _v_att.quat_reset_counter) {
+			// we only extract the heading change from the delta quaternion
+			// _man_yaw_sp += Eulerf(Quatf(_v_att.delta_q_reset)).psi();
+		}
+	}
 }
-
-void
-HelicopterAttitudeControl::sensor_correction_poll()
-{
-    /* check if there is a new message */
-    bool updated;
-    orb_check(_sensor_correction_sub, &updated);
-
-    if (updated) {
-        orb_copy(ORB_ID(sensor_correction), _sensor_correction_sub, &_sensor_correction);
-    }
-
-    /* update the latest gyro selection */
-    if (_sensor_correction.selected_gyro_instance < _gyro_count) {
-        _selected_gyro = _sensor_correction.selected_gyro_instance;
-    }
-}
-
-void
-HelicopterAttitudeControl::sensor_bias_poll()
-{
-    /* check if there is a new message */
-    bool updated;
-    orb_check(_sensor_bias_sub, &updated);
-
-    if (updated) {
-        orb_copy(ORB_ID(sensor_bias), _sensor_bias_sub, &_sensor_bias);
-    }
-
-}
-
-
 
 /**
  * Attitude controller.
@@ -387,44 +304,12 @@ HelicopterAttitudeControl::pid_attenuations(float speed_sp)
  * Output: '_att_control' vector
  */
 void
-HelicopterAttitudeControl::control_attitude_rates(float dt)
+HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rates)
 {
     /* reset integral if disarmed */
     if (!_v_control_mode.flag_armed) {
         _rates_int.zero();
     }
-
-    // get the raw gyro data and correct for thermal errors
-    Vector3f rates;
-
-    if (_selected_gyro == 0) {
-        rates(0) = (_sensor_gyro.x - _sensor_correction.gyro_offset_0[0]) * _sensor_correction.gyro_scale_0[0];
-        rates(1) = (_sensor_gyro.y - _sensor_correction.gyro_offset_0[1]) * _sensor_correction.gyro_scale_0[1];
-        rates(2) = (_sensor_gyro.z - _sensor_correction.gyro_offset_0[2]) * _sensor_correction.gyro_scale_0[2];
-
-    } else if (_selected_gyro == 1) {
-        rates(0) = (_sensor_gyro.x - _sensor_correction.gyro_offset_1[0]) * _sensor_correction.gyro_scale_1[0];
-        rates(1) = (_sensor_gyro.y - _sensor_correction.gyro_offset_1[1]) * _sensor_correction.gyro_scale_1[1];
-        rates(2) = (_sensor_gyro.z - _sensor_correction.gyro_offset_1[2]) * _sensor_correction.gyro_scale_1[2];
-
-    } else if (_selected_gyro == 2) {
-        rates(0) = (_sensor_gyro.x - _sensor_correction.gyro_offset_2[0]) * _sensor_correction.gyro_scale_2[0];
-        rates(1) = (_sensor_gyro.y - _sensor_correction.gyro_offset_2[1]) * _sensor_correction.gyro_scale_2[1];
-        rates(2) = (_sensor_gyro.z - _sensor_correction.gyro_offset_2[2]) * _sensor_correction.gyro_scale_2[2];
-
-    } else {
-        rates(0) = _sensor_gyro.x;
-        rates(1) = _sensor_gyro.y;
-        rates(2) = _sensor_gyro.z;
-    }
-
-    // rotate corrected measurements from sensor to body frame
-    rates = _board_rotation * rates;
-
-    // correct for in-run bias errors
-    rates(0) -= _sensor_bias.gyro_bias[0];
-    rates(1) -= _sensor_bias.gyro_bias[1];
-    rates(2) -= _sensor_bias.gyro_bias[2];
 
     Vector3f rates_p_scaled = _rate_p.emult(pid_attenuations(_rotor_speed_sp));
     Vector3f rates_i_scaled = _rate_i.emult(pid_attenuations(_rotor_speed_sp));
@@ -471,68 +356,25 @@ HelicopterAttitudeControl::control_attitude_rates(float dt)
 
 
 void
-HelicopterAttitudeControl::run()
+HelicopterAttitudeControl::Run()
 {
 
-    /*
-     * do subscriptions
-     */
-    _v_att_sub = orb_subscribe(ORB_ID(vehicle_attitude));
-    _v_att_sp_sub = orb_subscribe(ORB_ID(vehicle_attitude_setpoint));
-    _v_rates_sp_sub = orb_subscribe(ORB_ID(vehicle_rates_setpoint));
-    _v_control_mode_sub = orb_subscribe(ORB_ID(vehicle_control_mode));
-    _params_sub = orb_subscribe(ORB_ID(parameter_update));
-    _manual_control_sp_sub = orb_subscribe(ORB_ID(manual_control_setpoint));
-    _vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
-    _gyro_count = math::min(orb_group_count(ORB_ID(sensor_gyro)), MAX_GYRO_COUNT);
 
-    if (_gyro_count == 0) {
-        _gyro_count = 1;
-    }
+	if (should_exit()) {
+		_vehicle_angular_velocity_sub.unregisterCallback();
+		exit_and_cleanup();
+		return;
+	}
+    perf_begin(_loop_perf);
 
-    for (unsigned s = 0; s < _gyro_count; s++) {
-        _sensor_gyro_sub[s] = orb_subscribe_multi(ORB_ID(sensor_gyro), s);
-    }
+	vehicle_angular_velocity_s angular_velocity;
 
-    _sensor_correction_sub = orb_subscribe(ORB_ID(sensor_correction));
-    _sensor_bias_sub = orb_subscribe(ORB_ID(sensor_bias));
+	if (_vehicle_angular_velocity_sub.update(&angular_velocity)) {
+            const Vector3f rates{angular_velocity.xyz};
 
-    /* wakeup source: gyro data from sensor selected by the sensor app */
-    px4_pollfd_struct_t poll_fds = {};
-    poll_fds.events = POLLIN;
-
-    const hrt_abstime task_start = hrt_absolute_time();
-    hrt_abstime last_run = task_start;
-    float dt_accumulator = 0.f;
-    int loop_counter = 0;
-
-    while (!should_exit()) {
-
-        poll_fds.fd = _sensor_gyro_sub[_selected_gyro];
-
-        /* wait for up to 100ms for data */
-        int pret = px4_poll(&poll_fds, 1, 100);
-
-        /* timed out - periodic check for should_exit() */
-        if (pret == 0) {
-            continue;
-        }
-
-        /* this is undesirable but not much we can do - might want to flag unhappy status */
-        if (pret < 0) {
-            PX4_ERR("poll error %d, %d", pret, errno);
-            /* sleep a bit before next try */
-            usleep(100000);
-            continue;
-        }
-
-        perf_begin(_loop_perf);
-
-        /* run controller on gyro changes */
-        if (poll_fds.revents & POLLIN) {
             const hrt_abstime now = hrt_absolute_time();
-            float dt = (now - last_run) / 1e6f;
-            last_run = now;
+            float dt = (now - _last_run) / 1e6f;
+            _last_run = now;
 
             /* guard against too small (< 2ms) and too large (> 20ms) dt's */
             if (dt < 0.002f) {
@@ -542,17 +384,12 @@ HelicopterAttitudeControl::run()
                 dt = 0.02f;
             }
 
-            /* copy gyro data */
-            orb_copy(ORB_ID(sensor_gyro), _sensor_gyro_sub[_selected_gyro], &_sensor_gyro);
-
             /* check for updates in other topics */
-            parameter_update_poll();
-            vehicle_control_mode_poll();
-            vehicle_manual_poll();
+    		_v_control_mode_sub.update(&_v_control_mode);
+		    _manual_control_sp_sub.update(&_manual_control_sp);
+
             vehicle_status_poll();
-            vehicle_attitude_poll();
-            sensor_correction_poll();
-            sensor_bias_poll();
+            vehicle_attitude_poll();;
 
             /* Check if we are in rattitude mode and the pilot is above the threshold on pitch
              * or roll (yaw can rotate 360 in normal att control).  If both are true don't
@@ -609,12 +446,12 @@ HelicopterAttitudeControl::run()
 
                 } else {
                     /* attitude controller disabled, poll rates setpoint topic */
-                    vehicle_rates_setpoint_poll();
-                    _rates_sp(0) = _v_rates_sp.roll;
-                    _rates_sp(1) = _v_rates_sp.pitch;
-                    _rates_sp(2) = _v_rates_sp.yaw;
-                    _coll_sp = - _v_rates_sp.thrust_body[2];
-                }
+                    if (_v_rates_sp_sub.update(&_v_rates_sp)) {
+                        _rates_sp(0) = _v_rates_sp.roll;
+                        _rates_sp(1) = _v_rates_sp.pitch;
+                        _rates_sp(2) = _v_rates_sp.yaw;
+                        _coll_sp = -_v_rates_sp.thrust_body[2];
+                    }
             }
             //Here is param for fix speed rotor.
 			if (_v_control_mode.flag_armed)
@@ -628,8 +465,9 @@ HelicopterAttitudeControl::run()
 			else {
 				_rotor_speed_sp = 0;
 			}
+
             if (_v_control_mode.flag_control_rates_enabled) {
-                control_attitude_rates(dt);
+                control_attitude_rates(dt, rates);
 
                 /* publish actuator controls */
 
@@ -658,7 +496,7 @@ HelicopterAttitudeControl::run()
 				_actuators.control[4] = (PX4_ISFINITE(actual_coll_sp )) ? actual_coll_sp  : 0.0f;
 
                 _actuators.timestamp = hrt_absolute_time();
-                _actuators.timestamp_sample = _sensor_gyro.timestamp;
+                _actuators.timestamp_sample = angular_velocity.timestamp;
 
                 if (!_actuators_0_circuit_breaker_enabled) {
                     if (_actuators_0_pub != nullptr) {
@@ -700,7 +538,7 @@ HelicopterAttitudeControl::run()
                     _actuators.control[2] = 0.0f;
                     _actuators.control[3] = 0.0f;
                     _actuators.timestamp = hrt_absolute_time();
-                    _actuators.timestamp_sample = _sensor_gyro.timestamp;
+                    _actuators.timestamp_sample = angular_velocity.timestamp;
 
                     if (!_actuators_0_circuit_breaker_enabled) {
                         if (_actuators_0_pub != nullptr) {
@@ -715,40 +553,25 @@ HelicopterAttitudeControl::run()
             }
 
             /* calculate loop update rate while disarmed or at least a few times (updating the filter is expensive) */
-            if (!_v_control_mode.flag_armed || (now - task_start) < 3300000) {
-                dt_accumulator += dt;
-                ++loop_counter;
+            if (!_v_control_mode.flag_armed || (now - _task_start) < 3300000) {
+                _dt_accumulator += dt;
+                ++_loop_counter;
 
-                if (dt_accumulator > 1.f) {
-                    const float loop_update_rate = (float)loop_counter / dt_accumulator;
+                if (_dt_accumulator > 1.f) {
+                    const float loop_update_rate = (float)_loop_counter / _dt_accumulator;
                     _loop_update_rate_hz = _loop_update_rate_hz * 0.5f + loop_update_rate * 0.5f;
-                    dt_accumulator = 0;
-                    loop_counter = 0;
+                    _dt_accumulator = 0;
+                    _loop_counter = 0;
                     _lp_filters[0].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq.get());
                     _lp_filters[1].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq.get());
                     _lp_filters[2].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq.get());
                 }
             }
-
         }
 
-        perf_end(_loop_perf);
+        parameter_update_poll();
     }
-
-    orb_unsubscribe(_v_att_sub);
-    orb_unsubscribe(_v_att_sp_sub);
-    orb_unsubscribe(_v_rates_sp_sub);
-    orb_unsubscribe(_v_control_mode_sub);
-    orb_unsubscribe(_params_sub);
-    orb_unsubscribe(_manual_control_sp_sub);
-    orb_unsubscribe(_vehicle_status_sub);
-
-    for (unsigned s = 0; s < _gyro_count; s++) {
-        orb_unsubscribe(_sensor_gyro_sub[s]);
-    }
-
-    orb_unsubscribe(_sensor_correction_sub);
-    orb_unsubscribe(_sensor_bias_sub);
+    perf_end(_loop_perf);
 }
 
 
@@ -783,3 +606,4 @@ int heli_att_control_main(int argc, char *argv[])
 {
     return HelicopterAttitudeControl::main(argc, argv);
 }
+

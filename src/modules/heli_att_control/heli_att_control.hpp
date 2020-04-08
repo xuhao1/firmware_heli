@@ -54,6 +54,10 @@
 #include <uORB/topics/vehicle_control_mode.h>
 #include <uORB/topics/vehicle_rates_setpoint.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/vehicle_angular_velocity.h>
+#include <uORB/Subscription.hpp>
+#include <px4_platform_common/px4_work_queue/WorkItem.hpp>
+#include <uORB/SubscriptionCallback.hpp>
 
 /**
  * Multicopter attitude control app start / stop handling function
@@ -63,7 +67,8 @@ extern "C" __EXPORT int heli_att_control_main(int argc, char *argv[]);
 #define MAX_GYRO_COUNT 3
 
 
-class HelicopterAttitudeControl : public ModuleBase<HelicopterAttitudeControl>, public ModuleParams
+class HelicopterAttitudeControl : public ModuleBase<HelicopterAttitudeControl>, public ModuleParams,
+	public px4::WorkItem
 {
 public:
 	HelicopterAttitudeControl();
@@ -83,7 +88,7 @@ public:
 	static int print_usage(const char *reason = nullptr);
 
 	/** @see ModuleBase::run() */
-	void run() override;
+	void Run() override;
 
 private:
 
@@ -96,12 +101,8 @@ private:
 	 * Check for parameter update and handle it.
 	 */
 	void		parameter_update_poll();
-	void		sensor_bias_poll();
-	void		sensor_correction_poll();
 	void		vehicle_attitude_poll();
 	void		vehicle_attitude_setpoint_poll();
-	void		vehicle_control_mode_poll();
-	void		vehicle_manual_poll();
 	void		vehicle_rates_setpoint_poll();
 	void		vehicle_status_poll();
 	void 		helicopter_thrust_control();
@@ -113,7 +114,7 @@ private:
 	/**
 	 * Attitude rates controller.
 	 */
-	void		control_attitude_rates(float dt);
+	void		control_attitude_rates(float dt, matrix::Vector3f rates);
 
 	/**
 	 * Throttle PID attenuation.
@@ -121,16 +122,15 @@ private:
 	matrix::Vector3f pid_attenuations(float _speed);
 
 
-	int		_v_att_sub{-1};			/**< vehicle attitude subscription */
-	int		_v_att_sp_sub{-1};		/**< vehicle attitude setpoint subscription */
-	int		_v_rates_sp_sub{-1};		/**< vehicle rates setpoint subscription */
-	int		_v_control_mode_sub{-1};	/**< vehicle control mode subscription */
-	int		_params_sub{-1};		/**< parameter updates subscription */
-	int		_manual_control_sp_sub{-1};	/**< manual control setpoint subscription */
-	int		_vehicle_status_sub{-1};	/**< vehicle status subscription */
-	int		_sensor_gyro_sub[MAX_GYRO_COUNT];	/**< gyro data subscription */
-	int		_sensor_correction_sub{-1};	/**< sensor thermal correction subscription */
-	int		_sensor_bias_sub{-1};		/**< sensor in-run bias correction subscription */
+	uORB::Subscription _v_att_sub{ORB_ID(vehicle_attitude)};			/**< vehicle attitude subscription */
+	uORB::Subscription _v_att_sp_sub{ORB_ID(vehicle_attitude_setpoint)};		/**< vehicle attitude setpoint subscription */
+	uORB::Subscription _v_rates_sp_sub{ORB_ID(vehicle_rates_setpoint)};		/**< vehicle rates setpoint subscription */
+	uORB::Subscription _v_control_mode_sub{ORB_ID(vehicle_control_mode)};		/**< vehicle control mode subscription */
+	uORB::Subscription _manual_control_sp_sub{ORB_ID(manual_control_setpoint)};	/**< manual control setpoint subscription */
+	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};			/**< vehicle status subscription */
+	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};		/**< parameter updates subscription */
+
+	uORB::SubscriptionCallbackWorkItem _vehicle_angular_velocity_sub{this, ORB_ID(vehicle_angular_velocity)};
 
 	unsigned _gyro_count{1};
 	int _selected_gyro{0};
@@ -152,11 +152,7 @@ private:
 	struct actuator_controls_s		_actuators {};		/**< actuator controls */
 	struct vehicle_status_s			_vehicle_status {};	/**< vehicle status */
 	struct battery_status_s			_battery_status {};	/**< battery status */
-	struct sensor_gyro_s			_sensor_gyro {};	/**< gyro data before thermal correctons and ekf bias estimates are applied */
-	struct sensor_correction_s		_sensor_correction {};	/**< sensor thermal corrections */
-	struct sensor_bias_s			_sensor_bias {};	/**< sensor in-run bias corrections */
 
-	
 	perf_counter_t	_loop_perf;			/**< loop performance counter */
 
 	math::LowPassFilter2p _lp_filters[3];                      /**< low-pass filters for D-term (roll, pitch & yaw) */
@@ -170,6 +166,10 @@ private:
 	float _coll_sp;				/**< collective setpoint, which is really thrust for heli */
 	float _rotor_speed_sp;                /*rotor speed setpoint, should be fixed when flying*/
 	matrix::Vector3f _att_control;			/**< attitude control vector */
+	hrt_abstime _task_start{hrt_absolute_time()};
+	hrt_abstime _last_run{0};
+	float _dt_accumulator{0.0f};
+	int _loop_counter{0};
 
 	matrix::Dcmf _board_rotation;			/**< rotation matrix for the orientation that the board is mounted */
 
