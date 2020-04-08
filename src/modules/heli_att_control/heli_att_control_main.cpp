@@ -48,6 +48,9 @@ HelicopterAttitudeControl::HelicopterAttitudeControl():
             {initial_update_rate_hz, 50.f},
             {initial_update_rate_hz, 50.f}}
 {
+
+    PX4_WARN("Start Helicopter");
+
     // _vehicle_status.is_rotary_wing = true;
 
     /* initialize quaternions in messages to be valid */
@@ -61,10 +64,6 @@ HelicopterAttitudeControl::HelicopterAttitudeControl():
     _rotor_speed_sp = 0.0f;
     _coll_sp = 0.0f;
     _att_control.zero();
-
-    if (!_vehicle_angular_velocity_sub.registerCallback()) {
-		PX4_ERR("vehicle_angular_velocity callback registration failed!");
-	}
 
     parameters_updated();
 }
@@ -577,24 +576,40 @@ HelicopterAttitudeControl::Run()
 
 int HelicopterAttitudeControl::task_spawn(int argc, char *argv[])
 {
-    _task_id = px4_task_spawn_cmd("heli_att_control",
-                                  SCHED_DEFAULT,
-                                  SCHED_PRIORITY_ATTITUDE_CONTROL,
-                                  1700,
-                                  (px4_main_t)&run_trampoline,
-                                  (char *const *)argv);
+	HelicopterAttitudeControl *instance = new HelicopterAttitudeControl();
 
-    if (_task_id < 0) {
-        _task_id = -1;
-        return -errno;
-    }
+	if (instance) {
+		_object.store(instance);
+		_task_id = task_id_is_work_queue;
 
-    return 0;
+		if (instance->init()) {
+			return PX4_OK;
+		}
+
+	} else {
+		PX4_ERR("alloc failed");
+	}
+
+	delete instance;
+	_object.store(nullptr);
+	_task_id = -1;
+
+	return PX4_ERROR;
 }
 
 HelicopterAttitudeControl *HelicopterAttitudeControl::instantiate(int argc, char *argv[])
 {
     return new HelicopterAttitudeControl();
+}
+
+bool HelicopterAttitudeControl::init() {
+    PX4_WARN("Initial Helicopter Attitude Control");
+	if (!_vehicle_angular_velocity_sub.registerCallback()) {
+		PX4_ERR("vehicle_angular_velocity callback registration failed!");
+		return false;
+	}
+
+	return true;
 }
 
 int HelicopterAttitudeControl::custom_command(int argc, char *argv[])

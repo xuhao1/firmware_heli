@@ -89,6 +89,7 @@ public:
 
 	/** @see ModuleBase::run() */
 	void Run() override;
+	bool init();
 
 private:
 
