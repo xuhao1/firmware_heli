@@ -107,6 +107,8 @@ private:
 	void		vehicle_rates_setpoint_poll();
 	void		vehicle_status_poll();
 	void 		helicopter_thrust_control();
+
+	void publish_actuator_controls();
 	/**
 	 * Attitude controller.
 	 */
@@ -166,6 +168,7 @@ private:
 	matrix::Vector3f _rates_int;			/**< angular rates integral error */
 	float _coll_sp;				/**< collective setpoint, which is really thrust for heli */
 	float _rotor_speed_sp;                /*rotor speed setpoint, should be fixed when flying*/
+	float _actual_coll_sp;
 	matrix::Vector3f _att_control;			/**< attitude control vector */
 	hrt_abstime _task_start{hrt_absolute_time()};
 	hrt_abstime _last_run{0};
