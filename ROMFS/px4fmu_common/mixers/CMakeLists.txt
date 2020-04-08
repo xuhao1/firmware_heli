@@ -87,4 +87,5 @@ px4_add_romfs_files(
 	wingwing.main.mix
 	zmr250.main.mix
 	gaui.main.mix
+	devil_420.main.mix
 )
