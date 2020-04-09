@@ -126,16 +126,6 @@ HelicopterAttitudeControl::parameters_updated()
 	_man_tilt_max = math::radians(_param_mpc_man_tilt_max.get());
 
     _actuators_0_circuit_breaker_enabled = circuit_breaker_enabled("CBRK_RATE_CTRL", CBRK_RATE_CTRL_KEY);
-
-    /* get transformation matrix from sensor/board to body frame */
-    _board_rotation = get_rot_matrix((enum Rotation)_board_rotation_param.get());
-
-    /* fine tune the rotation */
-    Dcmf board_rotation_offset(Eulerf(
-            M_DEG_TO_RAD_F * _board_offset_x.get(),
-            M_DEG_TO_RAD_F * _board_offset_y.get(),
-            M_DEG_TO_RAD_F * _board_offset_z.get()));
-    _board_rotation = board_rotation_offset * _board_rotation;
 }
 
 
@@ -165,10 +155,6 @@ HelicopterAttitudeControl::vehicle_status_poll()
 {
 	/* check if there is new status information */
 	if (_vehicle_status_sub.update(&_vehicle_status)) {
-		/* set correct uORB ID, depending on if vehicle is VTOL or not */
-		if (_actuators_id == nullptr) {
-				_actuators_id = ORB_ID(actuator_controls_0);
-		}
 	}
 }
 
@@ -196,7 +182,7 @@ void
 HelicopterAttitudeControl::control_attitude(float dt)
 {
     vehicle_attitude_setpoint_poll();
-    _coll_sp = - _v_att_sp.thrust_body[2];
+    _thrust_sp = - _v_att_sp.thrust_body[2];
 
     /* prepare yaw weight from the ratio between roll/pitch and yaw gains */
     Vector3f attitude_gain = _attitude_p;
@@ -365,6 +351,8 @@ HelicopterAttitudeControl::Run()
 
 	vehicle_angular_velocity_s angular_velocity;
 
+    bool auto_thrust_mode = true;
+
 	if (_vehicle_angular_velocity_sub.update(&angular_velocity)) {
         const Vector3f rates{angular_velocity.xyz};
 		_actuators.timestamp_sample = angular_velocity.timestamp_sample;
@@ -401,6 +389,7 @@ HelicopterAttitudeControl::Run()
 				    !_v_control_mode.flag_control_velocity_enabled &&
 				    !_v_control_mode.flag_control_position_enabled) {
 					generate_attitude_setpoint(dt, _reset_yaw_sp);
+                    auto_thrust_mode = false;
                     _reset_yaw_sp = _vehicle_land_detected.landed;
             } else {
                 _reset_yaw_sp = true;
@@ -412,15 +401,10 @@ HelicopterAttitudeControl::Run()
             _v_rates_sp.roll = _rates_sp(0);
             _v_rates_sp.pitch = _rates_sp(1);
             _v_rates_sp.yaw = _rates_sp(2);
-            _v_rates_sp.thrust_body[2] = - _coll_sp;
+            _v_rates_sp.thrust_body[2] = - _thrust_sp;
             _v_rates_sp.timestamp = hrt_absolute_time();
 
-            if (_v_rates_sp_pub != nullptr) {
-                orb_publish(_rates_sp_id, _v_rates_sp_pub, &_v_rates_sp);
-
-            } else if (_rates_sp_id) {
-                _v_rates_sp_pub = orb_advertise(_rates_sp_id, &_v_rates_sp);
-            }
+        	_v_rates_sp_pub.publish(_v_rates_sp);
 
         } else {
             /* attitude controller disabled, poll rates setpoint topic */
@@ -431,21 +415,16 @@ HelicopterAttitudeControl::Run()
                         math::superexpo(-_manual_control_sp.x, _acro_expo_rp.get(), _acro_superexpo_rp.get()),
                         math::superexpo(_manual_control_sp.r, _acro_expo_y.get(), _acro_superexpo_y.get()));
                 _rates_sp = man_rate_sp.emult(_acro_rate_max);
-                _coll_sp = _manual_control_sp.z;
-
+                _thrust_sp = _manual_control_sp.z;
+                auto_thrust_mode = false;
                 /* publish attitude rates setpoint */
                 _v_rates_sp.roll = _rates_sp(0);
                 _v_rates_sp.pitch = _rates_sp(1);
                 _v_rates_sp.yaw = _rates_sp(2);
-                _v_rates_sp.thrust_body[2] = - _coll_sp;
+                _v_rates_sp.thrust_body[2] = - _thrust_sp;
                 _v_rates_sp.timestamp = hrt_absolute_time();
 
-                if (_v_rates_sp_pub != nullptr) {
-                    orb_publish(_rates_sp_id, _v_rates_sp_pub, &_v_rates_sp);
-
-                } else if (_rates_sp_id) {
-                    _v_rates_sp_pub = orb_advertise(_rates_sp_id, &_v_rates_sp);
-                }
+            	_v_rates_sp_pub.publish(_v_rates_sp);
 
             } else {
                 /* attitude controller disabled, poll rates setpoint topic */
@@ -453,20 +432,26 @@ HelicopterAttitudeControl::Run()
                     _rates_sp(0) = _v_rates_sp.roll;
                     _rates_sp(1) = _v_rates_sp.pitch;
                     _rates_sp(2) = _v_rates_sp.yaw;
-                    _coll_sp = -_v_rates_sp.thrust_body[2];
+                    _thrust_sp = -_v_rates_sp.thrust_body[2];
                 }
             }
         }
+
         //Here is param for fix speed rotor.
-        if (_v_control_mode.flag_armed)
-        {
-            if (_heli_rotor_speed_mode.get() == 0)
+        if (auto_thrust_mode) {
+            if (_heli_rotor_speed_mode.get() == 0) {
                 _rotor_speed_sp = _heli_fixed_speed.get();
-            else {
+            } else if (_heli_rotor_speed_mode.get() == 1) {
                 _rotor_speed_sp = (_manual_control_sp.aux2 + 1.0f) * 0.5f;
+            } else if (_heli_rotor_speed_mode.get() == 2)  {
+                _rotor_speed_sp = _thrust_sp;
             }
+        } else {
+            _rotor_speed_sp = _thrust_sp;
+            _coll_sp = _manual_control_sp.aux1;
         }
-        else {
+
+        if (!_v_control_mode.flag_armed) {
             _rotor_speed_sp = 0;
         }
 
@@ -475,10 +460,6 @@ HelicopterAttitudeControl::Run()
 
             /* publish actuator controls */
 
-            float coll_max = _heli_coll_max.get();
-            float coll_min = _heli_coll_min.get();
-
-            _actual_coll_sp = (coll_max - coll_min) * _coll_sp + coll_min;
 
             publish_actuator_controls();
 
@@ -489,37 +470,20 @@ HelicopterAttitudeControl::Run()
             rate_ctrl_status.pitchspeed_integ = _rates_int(1);
             rate_ctrl_status.yawspeed_integ = _rates_int(2);
 
-            int instance;
-            orb_publish_auto(ORB_ID(rate_ctrl_status), &_controller_status_pub, &rate_ctrl_status, &instance, ORB_PRIO_DEFAULT);
+            _controller_status_pub.publish(rate_ctrl_status);
         }
 
         if (_v_control_mode.flag_control_termination_enabled) {
-            if (!_vehicle_status.is_vtol) {
+            _rotor_speed_sp = 0.0f;
 
-                _rates_sp.zero();
-                _rates_int.zero();
-                _coll_sp = 0.0f;
-                _rotor_speed_sp = 0.0f;
-                _att_control.zero();
+            _rates_int.zero();
+            _rates_prev.zero();
+            _rates_prev_filtered.zero();
 
-                /* publish actuator controls */
-                _actuators.control[0] = 0.0f;
-                _actuators.control[1] = 0.0f;
-                _actuators.control[2] = 0.0f;
-                _actuators.control[3] = 0.0f;
-                _actuators.timestamp = hrt_absolute_time();
-                _actuators.timestamp_sample = angular_velocity.timestamp;
+            // _att_control.zero();
+            // _coll_sp = 0.0f;
 
-                if (!_actuators_0_circuit_breaker_enabled) {
-                    if (_actuators_0_pub != nullptr) {
-
-                        orb_publish(_actuators_id, _actuators_0_pub, &_actuators);
-
-                    } else if (_actuators_id) {
-                        _actuators_0_pub = orb_advertise(_actuators_id, &_actuators);
-                    }
-                }
-            }
+            publish_actuator_controls();
         }
 
         /* calculate loop update rate while disarmed or at least a few times (updating the filter is expensive) */
@@ -558,16 +522,6 @@ HelicopterAttitudeControl::generate_attitude_setpoint(float dt, bool reset_yaw_s
 		_man_yaw_sp = wrap_pi(_man_yaw_sp + attitude_setpoint.yaw_sp_move_rate * dt);
 	}
 
-	/*
-	 * Input mapping for roll & pitch setpoints
-	 * ----------------------------------------
-	 * We control the following 2 angles:
-	 * - tilt angle, given by sqrt(x*x + y*y)
-	 * - the direction of the maximum tilt in the XY-plane, which also defines the direction of the motion
-	 *
-	 * This allows a simple limitation of the tilt angle, the vehicle flies towards the direction that the stick
-	 * points to, and changes of the stick input are linear.
-	 */
 	const float x = _manual_control_sp.x * _man_tilt_max;
 	const float y = _manual_control_sp.y * _man_tilt_max;
 
@@ -583,10 +537,6 @@ HelicopterAttitudeControl::generate_attitude_setpoint(float dt, bool reset_yaw_s
 	Eulerf euler_sp = q_sp_rpy;
 	attitude_setpoint.roll_body = euler_sp(0);
 	attitude_setpoint.pitch_body = euler_sp(1);
-	// The axis angle can change the yaw as well (noticeable at higher tilt angles).
-	// This is the formula by how much the yaw changes:
-	//   let a := tilt angle, b := atan(y/x) (direction of maximum tilt)
-	//   yaw = atan(-2 * sin(b) * cos(b) * sin^2(a/2) / (1 - 2 * cos^2(b) * sin^2(a/2))).
 	attitude_setpoint.yaw_body = _man_yaw_sp + euler_sp(2);
 
 	/* copy quaternion setpoint to attitude setpoint topic */
@@ -597,8 +547,7 @@ HelicopterAttitudeControl::generate_attitude_setpoint(float dt, bool reset_yaw_s
 	attitude_setpoint.thrust_body[2] = -_manual_control_sp.z;
 	attitude_setpoint.timestamp = hrt_absolute_time();
 
-    orb_publish_auto(ORB_ID(vehicle_attitude_setpoint), &_vehicle_attitude_setpoint_pub, &attitude_setpoint, nullptr, ORB_PRIO_DEFAULT);
-
+    _vehicle_attitude_setpoint_pub.publish(attitude_setpoint);
     /*
 	_landing_gear.landing_gear = get_landing_gear_state();
 	_landing_gear.timestamp = hrt_absolute_time();
@@ -609,6 +558,9 @@ HelicopterAttitudeControl::generate_attitude_setpoint(float dt, bool reset_yaw_s
 void
 HelicopterAttitudeControl::publish_actuator_controls()
 {
+    float coll_max = _heli_coll_max.get();
+    float coll_min = _heli_coll_min.get();
+    _actual_coll_sp = (coll_max - coll_min) * _coll_sp + coll_min;
 
     if ( _heli_calib_servo.get() ) {
         _att_control(0) = _heli_trim_ail.get();
@@ -627,9 +579,7 @@ HelicopterAttitudeControl::publish_actuator_controls()
     _actuators.control[4] = (PX4_ISFINITE(_actual_coll_sp )) ? _actual_coll_sp  : 0.0f;
 
     _actuators.timestamp = hrt_absolute_time();
-
-    // mavlink_log_info(&_mavlink_log_pub, "Publishing Actuator");
-    orb_publish_auto(_actuators_id, &_actuators_0_pub, &_actuators, nullptr, ORB_PRIO_DEFAULT);
+    _actuators_0_pub.publish(_actuators);
 }
 
 int HelicopterAttitudeControl::task_spawn(int argc, char *argv[])

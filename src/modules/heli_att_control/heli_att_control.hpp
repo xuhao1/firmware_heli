@@ -41,6 +41,7 @@
 #include <px4_module_params.h>
 #include <px4_posix.h>
 #include <px4_tasks.h>
+#include <uORB/Publication.hpp>
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/manual_control_setpoint.h>
@@ -138,15 +139,11 @@ private:
 	uORB::Subscription _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};	/**< vehicle land detected subscription */
 
 	uORB::SubscriptionCallbackWorkItem _vehicle_angular_velocity_sub{this, ORB_ID(vehicle_angular_velocity)};
-	unsigned _gyro_count{1};
-	int _selected_gyro{0};
 
-	orb_advert_t	_v_rates_sp_pub{nullptr};		/**< rate setpoint publication */
-	orb_advert_t	_actuators_0_pub{nullptr};		/**< attitude actuator controls publication */
-	orb_advert_t	_controller_status_pub{nullptr};	/**< controller status publication */
-	orb_advert_t 	_vehicle_attitude_setpoint_pub{nullptr};
-	orb_id_t _rates_sp_id{nullptr};		/**< pointer to correct rates setpoint uORB metadata structure */
-	orb_id_t _actuators_id{nullptr};	/**< pointer to correct actuator controls0 uORB metadata structure */
+	uORB::Publication<vehicle_rates_setpoint_s>	_v_rates_sp_pub{ORB_ID(vehicle_rates_setpoint)};			/**< rate setpoint publication */
+	uORB::Publication<actuator_controls_s>	_actuators_0_pub{ORB_ID(actuator_controls_0)};			/**< rate setpoint publication */
+	uORB::Publication<vehicle_attitude_setpoint_s>	_vehicle_attitude_setpoint_pub{ORB_ID(vehicle_attitude_setpoint)};			/**< rate setpoint publication */
+	uORB::Publication<rate_ctrl_status_s>	_controller_status_pub{ORB_ID(rate_ctrl_status)};			/**< rate setpoint publication */
 
 	bool		_actuators_0_circuit_breaker_enabled{false};	/**< circuit breaker to suppress output */
 
@@ -170,10 +167,12 @@ private:
 	matrix::Vector3f _rates_prev_filtered;		/**< angular rates on previous step (low-pass filtered) */
 	matrix::Vector3f _rates_sp;			/**< angular rates setpoint */
 	matrix::Vector3f _rates_int;			/**< angular rates integral error */
-	float _coll_sp;				/**< collective setpoint, which is really thrust for heli */
-	float _rotor_speed_sp;                /*rotor speed setpoint, should be fixed when flying*/
 	float _actual_coll_sp;
 	float _man_yaw_sp;
+
+	float _coll_sp;				/**< collective setpoint, which is really thrust for heli */
+	float _rotor_speed_sp;                /*rotor speed setpoint, should be fixed when flying*/
+	float _thrust_sp;
 
 	bool _reset_yaw_sp;
 	float _man_tilt_max;

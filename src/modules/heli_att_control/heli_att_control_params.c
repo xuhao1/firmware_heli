@@ -565,9 +565,10 @@ PARAM_DEFINE_FLOAT(HELI_COLL_MIN, -0.2f);
  * If parameter use rotor speed from AUX2
  *
  * @min 0
- * @max 1
- * @value 0 Rotor speed fixed
+ * @max 2
+ * @value 0 Rotor speed fixed from param
  * @value 1 Rotor speed from AUX2
+ * @value 2 Rotor speed from Thrust
  * @group Helicopter Attitude Control
  */
 PARAM_DEFINE_INT32(HELI_ROTSPD_MODE, 1);
