@@ -467,10 +467,47 @@ PARAM_DEFINE_FLOAT(HELI_RATT_TH, 0.8f);
  * @min 0
  * @max 1000
  * @decimal 0
- * @increment 10
+ * @increment 0.1
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_OUT_CUTOFF, 30.f);
+PARAM_DEFINE_FLOAT(HELI_ROLL_CUT, 30.f);
+
+
+/**
+ * Cutoff frequency for the low pass filter on the D-term in the rate controller
+ *
+ * The D-term uses the derivative of the rate and thus is the most susceptible to noise.
+ * Therefore, using a D-term filter allows to decrease the driver-level filtering, which
+ * leads to reduced control latency and permits to increase the P gains.
+ * A value of 0 disables the filter.
+ *
+ * @unit Hz
+ * @min 0
+ * @max 1000
+ * @decimal 0
+ * @increment 0.1
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_PITCH_CUT, 30.f);
+
+
+/**
+ * Cutoff frequency for the low pass filter on the D-term in the rate controller
+ *
+ * The D-term uses the derivative of the rate and thus is the most susceptible to noise.
+ * Therefore, using a D-term filter allows to decrease the driver-level filtering, which
+ * leads to reduced control latency and permits to increase the P gains.
+ * A value of 0 disables the filter.
+ *
+ * @unit Hz
+ * @min 0
+ * @max 1000
+ * @decimal 0
+ * @increment 0.1
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_YAW_CUT, 30.f);
+
 
 /**
  * Helicopter air-mode

@@ -99,12 +99,18 @@ HelicopterAttitudeControl::parameters_updated()
     _rate_d(2) = _yaw_rate_d.get();
     _rate_ff(2) = _yaw_rate_ff.get();
 
-    if (fabsf(_lp_filters[0].get_cutoff_freq() - _output_cutoff_freq.get()) > 0.01f) {
-        _lp_filters[0].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq.get());
-        _lp_filters[1].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq.get());
-        _lp_filters[2].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq.get());
+    if ( fabsf(_lp_filters[0].get_cutoff_freq() - _output_cutoff_freq_r.get()) > 0.01f) {
+        _lp_filters[0].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq_r.get());
         _lp_filters[0].reset(_rates_prev(0));
+    }
+
+    if ( fabsf(_lp_filters[1].get_cutoff_freq() - _output_cutoff_freq_p.get()) > 0.01f) {
+        _lp_filters[1].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq_p.get());
         _lp_filters[1].reset(_rates_prev(1));
+    }
+
+    if ( fabsf(_lp_filters[2].get_cutoff_freq() - _output_cutoff_freq_y.get()) > 0.01f) {
+        _lp_filters[2].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq_y.get());
         _lp_filters[2].reset(_rates_prev(2));
     }
 
@@ -278,7 +284,7 @@ HelicopterAttitudeControl::pid_attenuations(float speed_sp)
 	pidAttenuationPerAxis(AXIS_INDEX_PITCH) = rate;
 
 	//Yaw control also needs this for heli
-	pidAttenuationPerAxis(AXIS_INDEX_YAW) = rate*rate;
+	pidAttenuationPerAxis(AXIS_INDEX_YAW) = rate;//*rate;
 	return pidAttenuationPerAxis;
 }
 
@@ -496,9 +502,9 @@ HelicopterAttitudeControl::Run()
                 _loop_update_rate_hz = _loop_update_rate_hz * 0.5f + loop_update_rate * 0.5f;
                 _dt_accumulator = 0;
                 _loop_counter = 0;
-                _lp_filters[0].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq.get());
-                _lp_filters[1].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq.get());
-                _lp_filters[2].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq.get());
+                _lp_filters[0].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq_r.get());
+                _lp_filters[1].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq_p.get());
+                _lp_filters[2].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq_y.get());
             }
         }
 
@@ -566,7 +572,7 @@ HelicopterAttitudeControl::publish_actuator_controls()
         _att_control(0) = _heli_trim_ail.get();
         _att_control(1) = _heli_trim_ele.get();
         _att_control(2) = _heli_trim_rud.get();
-        _actual_coll_sp = 0;
+        // _actual_coll_sp = 0;
     } else {
         _att_control(0) = _att_control(0) + _heli_trim_ail.get();
         _att_control(1) = _att_control(1) + _heli_trim_ele.get();

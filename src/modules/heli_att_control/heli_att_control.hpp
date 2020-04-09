@@ -209,7 +209,9 @@ private:
 
 		(ParamFloat<px4::params::HELI_YAW_FF>) _yaw_ff,					/**< yaw control feed-forward */
 
-		(ParamFloat<px4::params::HELI_OUT_CUTOFF>) _output_cutoff_freq,			/**< Cutoff frequency for the D-term filter */
+		(ParamFloat<px4::params::HELI_ROLL_CUT>) _output_cutoff_freq_r,			/**< Cutoff frequency for the D-term filter */
+		(ParamFloat<px4::params::HELI_PITCH_CUT>) _output_cutoff_freq_p,			/**< Cutoff frequency for the D-term filter */
+		(ParamFloat<px4::params::HELI_YAW_CUT>) _output_cutoff_freq_y,			/**< Cutoff frequency for the D-term filter */
 
 		(ParamFloat<px4::params::HELI_ROLRATE_MAX>) _roll_rate_max,
 		(ParamFloat<px4::params::HELI_PITRATE_MAX>) _pitch_rate_max,
