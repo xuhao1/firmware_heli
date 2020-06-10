@@ -292,7 +292,7 @@ HelicopterAttitudeControl::pid_attenuations(float speed_sp)
 	pidAttenuationPerAxis(AXIS_INDEX_PITCH) = rate;
 
 	//Yaw control also needs this for heli
-	pidAttenuationPerAxis(AXIS_INDEX_YAW) = rate;//*rate;
+	pidAttenuationPerAxis(AXIS_INDEX_YAW) = 1;//rate;//*rate;
 	return pidAttenuationPerAxis;
 }
 

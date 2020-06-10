@@ -383,10 +383,6 @@ then
 	pwm max -c 7 -p p:PWM_MAIN_MAX7
 	pwm max -c 8 -p p:PWM_MAIN_MAX8
 
-	pwm min -c 4 -p 460
-	pwm max -c 4 -p 1060
-	pwm disarmed -c 4 -p 760
-
 	if [ $FAILSAFE != none ]
 	then
 		pwm failsafe -c ${PWM_OUT} -p ${FAILSAFE} -d ${OUTPUT_DEV}
