@@ -99,6 +99,8 @@ HelicopterAttitudeControl::parameters_updated()
     _rate_d(2) = _yaw_rate_d.get();
     _rate_ff(2) = _yaw_rate_ff.get();
 
+    yawrate_ff_rotor_speed = _yaw_rate_ff_rotor_speed.get();
+
     if ( fabsf(_lp_filters[0].get_cutoff_freq() - _output_cutoff_freq_r.get()) > 0.01f) {
         _lp_filters[0].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq_r.get());
         _lp_filters[0].reset(_rates_prev(0));
@@ -280,11 +282,15 @@ HelicopterAttitudeControl::pid_attenuations(float speed_sp)
 	}
 
 	Vector3f pidAttenuationPerAxis;
-	pidAttenuationPerAxis(AXIS_INDEX_ROLL) = rate;
-	pidAttenuationPerAxis(AXIS_INDEX_PITCH) = rate;
+	pidAttenuationPerAxis(AXIS_INDEX_ROLL) = rate*rate;
+	pidAttenuationPerAxis(AXIS_INDEX_PITCH) = rate*rate;
 
-	//Yaw control also needs this for heli
-	pidAttenuationPerAxis(AXIS_INDEX_YAW) = 1;//rate;//*rate;
+
+    if (_heli_tail_mode.get() == 0) {
+    	pidAttenuationPerAxis(AXIS_INDEX_YAW) = rate*rate;
+    } else {
+    	pidAttenuationPerAxis(AXIS_INDEX_YAW) = 1;
+    }
 	return pidAttenuationPerAxis;
 }
 
@@ -320,7 +326,7 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
 
     _att_control(0) = _lp_filters[0].apply(_att_control(0));
     _att_control(1) = _lp_filters[1].apply(_att_control(1));
-    _att_control(2) = _lp_filters[2].apply(_att_control(2));
+    _att_control(2) = _lp_filters[2].apply(_att_control(2)) + yawrate_ff_rotor_speed * _rotor_speed_sp;
 
 
     /* update integral only if motors are providing enough thrust to be effective */

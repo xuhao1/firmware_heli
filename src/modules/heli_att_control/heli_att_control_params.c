@@ -262,6 +262,19 @@ PARAM_DEFINE_FLOAT(HELI_YAWRATE_D, 0.0f);
  */
 PARAM_DEFINE_FLOAT(HELI_YAWRATE_FF, 0.0f);
 
+
+/**
+ * Yaw rate feedforward by rotor speed
+ *
+ * Improves tracking performance.
+ *
+ * @min 0.0
+ * @decimal 4
+ * @increment 0.01
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_YAWRATE_RS, 0.2f);
+
 /**
  * Yaw feed forward
  *
@@ -609,6 +622,21 @@ PARAM_DEFINE_FLOAT(HELI_COLL_MIN, -0.2f);
  * @group Helicopter Attitude Control
  */
 PARAM_DEFINE_INT32(HELI_ROTSPD_MODE, 1);
+
+/**
+ * HELI YAW MODE
+ *
+ * The default uses fix rotor speed
+ * If parameter use rotor speed from AUX2
+ *
+ * @min 0
+ * @max 2
+ * @value 0 Normal tail
+ * @value 1 Direct tail
+ * @value 2 Coaxial
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_INT32(HELI_TAIL_MODE, 0);
 
 /**
  * HELI CALIB SERVO MODE
