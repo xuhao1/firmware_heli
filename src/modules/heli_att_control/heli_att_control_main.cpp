@@ -21,6 +21,14 @@
 #define AXIS_COUNT 3
 orb_advert_t		    _mavlink_log_pub;
 
+
+double generate_sweeep_signal_base(double t, double T, double omgmin=0.3, double omgmax=12, double c1 = 4.0, double c2 = 0.0187) {
+    // def generate_sweep_signal_base_func(T, omgmin=0.3, omgmax=12, c1=4.0, c2=0.0187):
+    //     return lambda t: math.sin(t * omgmin + (omgmax - omgmin) * c2 * (T / c1 * (math.exp(c1 * t / T) - 1) - t))
+    // func  = generate_sweep_signal_base_func(args.cycle, omgmin=args.fmin*6.28, omgmax=args.fmax*6.28)
+    return sin(t * omgmin + (omgmax - omgmin) * c2 * (T / c1 * (exp(c1 * t / T) - 1) - t));
+}
+
 using namespace matrix;
 int HelicopterAttitudeControl::print_usage(const char *reason)
 {
