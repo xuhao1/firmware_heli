@@ -22,11 +22,12 @@
 orb_advert_t		    _mavlink_log_pub;
 
 
-double generate_sweeep_signal_base(double t, double T, double omgmin=0.3, double omgmax=12, double c1 = 4.0, double c2 = 0.0187) {
+float generate_sweeep_signal_base(float t, float T, float omgmin=0.3, float omgmax=12, float c1 = 4.0, float c2 = 0.0187) {
     // def generate_sweep_signal_base_func(T, omgmin=0.3, omgmax=12, c1=4.0, c2=0.0187):
     //     return lambda t: math.sin(t * omgmin + (omgmax - omgmin) * c2 * (T / c1 * (math.exp(c1 * t / T) - 1) - t))
     // func  = generate_sweep_signal_base_func(args.cycle, omgmin=args.fmin*6.28, omgmax=args.fmax*6.28)
-    return sin(t * omgmin + (omgmax - omgmin) * c2 * (T / c1 * (exp(c1 * t / T) - 1) - t));
+    t = fmodf(t, T);
+    return sinf(t * omgmin + (omgmax - omgmin) * c2 * (T / c1 * (expf(c1 * t / T) - 1) - t));
 }
 
 using namespace matrix;
@@ -337,6 +338,42 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
     _att_control(2) = _lp_filters[2].apply(_att_control(2)) + yawrate_ff_rotor_speed * _rotor_speed_sp;
 
 
+    if (_manual_control_sp.aux3 > 0.9f) {
+        //Will start sweep procedure
+        if(!is_in_sweep) {
+            is_in_sweep = true;
+            t_sweep_start = hrt_absolute_time()/1e6f;
+            mavlink_log_info(&_mavlink_log_pub, "Start sweep on channel %d", _heli_iden_C.get());
+        }
+
+        float t_sweep = hrt_absolute_time()/1e6f - t_sweep_start;
+        int channel = _heli_iden_C.get();
+        if (channel <= 4) {
+            float s = 0;
+            //generate_sweeep_signal_base(double t, double T, double omgmin=0.3, double omgmax=12, double c1 = 4.0, double c2 = 0.0187);
+            //Must running on auto thrust mode for collective sweeping
+            if (t_sweep < _heli_iden_T.get()*_heli_iden_N.get()) {
+                s = _heli_iden_amp.get() * generate_sweeep_signal_base(t_sweep, _heli_iden_T.get(),
+                _heli_iden_fmin.get()*M_PI_F*2, _heli_iden_fmax.get()*M_PI_F*2);
+            }
+
+            // mavlink_log_info(&_mavlink_log_pub, "T %f s %f", (double)t_sweep, (double)s);
+
+            if(channel < 3) {
+                _att_control(channel) = _att_control(channel) + s;
+            } else {
+                if(channel == 3) {
+                    _coll_sp = _coll_sp + s;
+                } if (channel == 4) {
+                    _rotor_speed_sp = _rotor_speed_sp + s;
+                }
+            }
+        }
+    } else {
+        is_in_sweep = false;
+    }
+
+
     /* update integral only if motors are providing enough thrust to be effective */
     if (_coll_sp > MIN_TAKEOFF_COLL && _rotor_speed_sp > MIN_TAKEOFF_SPEED) {
         for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
@@ -461,10 +498,13 @@ HelicopterAttitudeControl::Run()
         if (auto_thrust_mode) {
             if (_heli_rotor_speed_mode.get() == 0) {
                 _rotor_speed_sp = _heli_fixed_speed.get();
+                _coll_sp = _thrust_sp;
             } else if (_heli_rotor_speed_mode.get() == 1) {
                 _rotor_speed_sp = (_manual_control_sp.aux2 + 1.0f) * 0.5f;
+                _coll_sp = _thrust_sp;
             } else if (_heli_rotor_speed_mode.get() == 2)  {
                 _rotor_speed_sp = _thrust_sp;
+                _coll_sp = _thrust_sp;
             }
         } else {
             _rotor_speed_sp = _thrust_sp;
