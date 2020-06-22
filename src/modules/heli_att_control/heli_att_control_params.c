@@ -273,7 +273,19 @@ PARAM_DEFINE_FLOAT(HELI_YAWRATE_FF, 0.0f);
  * @increment 0.01
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_YAWRATE_RS, 0.2f);
+PARAM_DEFINE_FLOAT(HELI_YAWFF_RS, 0.2f);
+
+/**
+ * Yaw rate feedforward by rotor speed
+ *
+ * Improves tracking performance.
+ *
+ * @min 0.0
+ * @decimal 4
+ * @increment 0.01
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_YAWFF_COL, 0.2f);
 
 /**
  * Yaw feed forward

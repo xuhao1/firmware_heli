@@ -209,7 +209,8 @@ private:
 		(ParamFloat<px4::params::HELI_YR_INT_LIM>) _yaw_rate_integ_lim,
 		(ParamFloat<px4::params::HELI_YAWRATE_D>) _yaw_rate_d,
 		(ParamFloat<px4::params::HELI_YAWRATE_FF>) _yaw_rate_ff,
-		(ParamFloat<px4::params::HELI_YAWRATE_RS>) _yaw_rate_ff_rotor_speed,
+		(ParamFloat<px4::params::HELI_YAWFF_RS>) _yaw_rate_ff_rotor_speed,
+		(ParamFloat<px4::params::HELI_YAWFF_COL>) _yaw_rate_ff_collective,
 
 		(ParamFloat<px4::params::HELI_YAW_FF>) _yaw_ff,					/**< yaw control feed-forward */
 
@@ -229,14 +230,6 @@ private:
 		(ParamFloat<px4::params::HELI_ACRO_EXPO_Y>) _acro_expo_y,				/**< expo stick curve shape (yaw) */
 		(ParamFloat<px4::params::HELI_ACRO_SUPEXP>) _acro_superexpo_rp,			/**< superexpo stick curve shape (roll & pitch) */
 		(ParamFloat<px4::params::HELI_ACRO_SUPEXY>) _acro_superexpo_y,			/**< superexpo stick curve shape (yaw) */
-
-		(ParamFloat<px4::params::HELI_RATT_TH>) _rattitude_thres,
-
-		(ParamInt<px4::params::SENS_BOARD_ROT>) _board_rotation_param,
-
-		(ParamFloat<px4::params::SENS_BOARD_X_OFF>) _board_offset_x,
-		(ParamFloat<px4::params::SENS_BOARD_Y_OFF>) _board_offset_y,
-		(ParamFloat<px4::params::SENS_BOARD_Z_OFF>) _board_offset_z,
 
 		(ParamFloat<px4::params::HELI_FIXED_SPEED>) _heli_fixed_speed,		/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamFloat<px4::params::HELI_TRIM_AIL>) _heli_trim_ail,		/**< Scale value [0, 1] for yaw rate setpoint  */
@@ -264,6 +257,7 @@ private:
 	matrix::Vector3f _rate_ff;		/**< Feedforward gain for desired rates */
 
 	float yawrate_ff_rotor_speed;
+	float yawrate_ff_collective;
 
 	matrix::Vector3f _heli_rate_max;		/**< attitude rate limits in stabilized modes */
 	matrix::Vector3f _auto_rate_max;	/**< attitude rate limits in auto modes */

@@ -109,6 +109,7 @@ HelicopterAttitudeControl::parameters_updated()
     _rate_ff(2) = _yaw_rate_ff.get();
 
     yawrate_ff_rotor_speed = _yaw_rate_ff_rotor_speed.get();
+    yawrate_ff_collective = _yaw_rate_ff_collective.get();
 
     if ( fabsf(_lp_filters[0].get_cutoff_freq() - _output_cutoff_freq_r.get()) > 0.01f) {
         _lp_filters[0].set_cutoff_frequency(_loop_update_rate_hz, _output_cutoff_freq_r.get());
@@ -284,15 +285,14 @@ Vector3f
 HelicopterAttitudeControl::pid_attenuations(float speed_sp)
 {
     float rate = 1.78f;
-	if (speed_sp > 0.4f)
-	{
-        //We trim our pid on rotor speed 1.4
-		rate = fminf(1.0f, 1/fabsf(speed_sp)) / 1.4f;
+	if (speed_sp > 0.4f) {
+        //We trim our pid on rotor speed 85%
+		rate = fminf(1.0f, 1/fabsf(speed_sp)) / 1.17f;
 	}
 
 	Vector3f pidAttenuationPerAxis;
-	pidAttenuationPerAxis(AXIS_INDEX_ROLL) = rate*rate;
-	pidAttenuationPerAxis(AXIS_INDEX_PITCH) = rate*rate;
+	pidAttenuationPerAxis(AXIS_INDEX_ROLL) = rate;
+	pidAttenuationPerAxis(AXIS_INDEX_PITCH) = rate;
 
 
     if (_heli_tail_mode.get() == 0) {
@@ -335,7 +335,7 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
 
     _att_control(0) = _lp_filters[0].apply(_att_control(0));
     _att_control(1) = _lp_filters[1].apply(_att_control(1));
-    _att_control(2) = _lp_filters[2].apply(_att_control(2)) + yawrate_ff_rotor_speed * _rotor_speed_sp;
+    _att_control(2) = _lp_filters[2].apply(_att_control(2)) + yawrate_ff_rotor_speed * _rotor_speed_sp + yawrate_ff_collective * fabs(_coll_sp);
 
 
     if (_manual_control_sp.aux3 > 0.9f) {
@@ -388,11 +388,14 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
         }
     }
 
-    /* explicitly limit the integrator state */
-    for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
-        _rates_int(i) = math::constrain(_rates_int(i), -_rate_int_lim(i), _rate_int_lim(i));
+    if (!_v_control_mode.flag_armed || _vehicle_status.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+        for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
+            _rates_int(i) = 0;
+        }
 
-    }
+        _rates_int(i) = math::constrain(_rates_int(i), -_rate_int_lim(i), _rate_int_lim(i));
+	}
+
 }
 
 
