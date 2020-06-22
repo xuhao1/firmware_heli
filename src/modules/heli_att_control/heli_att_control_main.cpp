@@ -388,13 +388,12 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
         }
     }
 
-    if (!_v_control_mode.flag_armed || _vehicle_status.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
-        for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
-            _rates_int(i) = 0;
+    for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
+        if (!_v_control_mode.flag_armed || _vehicle_status.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+                _rates_int(i) = 0;
         }
-
         _rates_int(i) = math::constrain(_rates_int(i), -_rate_int_lim(i), _rate_int_lim(i));
-	}
+    }
 
 }
 
@@ -640,24 +639,8 @@ HelicopterAttitudeControl::generate_attitude_setpoint(float dt, bool reset_yaw_s
 }
 
 void HelicopterAttitudeControl::reset_attitude_acro_setpoint() {
-    attitude_setpoint_acro.q_d = _v_att.q;
-    Eulerf euler_sp = _v_att.q;
-    attitude_setpoint_acro.pitch_body = euler_sp(1);
-    attitude_setpoint_acro.roll_body = euler_sp(0);
-    attitude_setpoint_acro.yaw_body = euler_sp(2);
-
-    attitude_setpoint_acro.q_d_valid = true;
-    attitude_setpoint_acro.timestamp = hrt_absolute_time();
-
-    attitude_setpoint.yaw_sp_move_rate = 0;
-}
-
-
-void HelicopterAttitudeControl::generate_attitude_acro_setpoint(float dt, matrix::Vector3f rates) {
-    Quatf q_sp = attitude_setpoint_acro.q_d;
-    q_sp = 0.5*q_sp.rotate(rates)*dt;
-
-    attitude_setpoint_acro.q_d = q_sp;
+    Quatf q_sp(_v_att.q);
+    q_sp.copyTo(attitude_setpoint_acro.q_d);
     Eulerf euler_sp = q_sp;
     attitude_setpoint_acro.pitch_body = euler_sp(1);
     attitude_setpoint_acro.roll_body = euler_sp(0);
@@ -666,7 +649,26 @@ void HelicopterAttitudeControl::generate_attitude_acro_setpoint(float dt, matrix
     attitude_setpoint_acro.q_d_valid = true;
     attitude_setpoint_acro.timestamp = hrt_absolute_time();
 
-    attitude_setpoint.yaw_sp_move_rate = 0;
+    attitude_setpoint_acro.yaw_sp_move_rate = 0;
+}
+
+
+void HelicopterAttitudeControl::generate_attitude_acro_setpoint(float dt, matrix::Vector3f rates) {
+    Quatf q_sp(attitude_setpoint_acro.q_d);
+    Quatf omg(0, rates(1), rates(2), rates(3));
+    q_sp = q_sp + omg*q_sp*dt*0.5f;
+    q_sp.normalize();
+
+    q_sp.copyTo(attitude_setpoint_acro.q_d);
+    Eulerf euler_sp = q_sp;
+    attitude_setpoint_acro.pitch_body = euler_sp(1);
+    attitude_setpoint_acro.roll_body = euler_sp(0);
+    attitude_setpoint_acro.yaw_body = euler_sp(2);
+
+    attitude_setpoint_acro.q_d_valid = true;
+    attitude_setpoint_acro.timestamp = hrt_absolute_time();
+
+    attitude_setpoint_acro.yaw_sp_move_rate = 0;
 }
 
 void
