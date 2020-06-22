@@ -456,6 +456,16 @@ PARAM_DEFINE_FLOAT(HELI_ACRO_SUPEXY, 0.0f);
 PARAM_DEFINE_FLOAT(HELI_RATT_TH, 0.8f);
 
 /**
+ * Helicopter tail mode
+ * 0 Normal servo drive tail
+ * 1 Use directly drive tail
+ * 2 Use coaxial to control tail
+ * @boolean
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_INT32(HELI_DIRECT_TAIL, 0);
+
+/**
  * Cutoff frequency for the low pass filter on the D-term in the rate controller
  *
  * The D-term uses the derivative of the rate and thus is the most susceptible to noise.
