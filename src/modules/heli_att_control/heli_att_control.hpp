@@ -183,6 +183,9 @@ private:
 	float _dt_accumulator{0.0f};
 	int _loop_counter{0};
 
+	float t_sweep_start = 0;
+	bool is_in_sweep = false;
+
 	matrix::Dcmf _board_rotation;			/**< rotation matrix for the orientation that the board is mounted */
 
 	DEFINE_PARAMETERS(
@@ -206,6 +209,7 @@ private:
 		(ParamFloat<px4::params::HELI_YR_INT_LIM>) _yaw_rate_integ_lim,
 		(ParamFloat<px4::params::HELI_YAWRATE_D>) _yaw_rate_d,
 		(ParamFloat<px4::params::HELI_YAWRATE_FF>) _yaw_rate_ff,
+		(ParamFloat<px4::params::HELI_YAWRATE_RS>) _yaw_rate_ff_rotor_speed,
 
 		(ParamFloat<px4::params::HELI_YAW_FF>) _yaw_ff,					/**< yaw control feed-forward */
 
@@ -241,9 +245,15 @@ private:
 		(ParamFloat<px4::params::HELI_COLL_MIN>) _heli_coll_min,	/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamFloat<px4::params::HELI_COLL_MAX>) _heli_coll_max,	/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamInt<px4::params::HELI_ROTSPD_MODE>) _heli_rotor_speed_mode,		/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamInt<px4::params::HELI_TAIL_MODE>) _heli_tail_mode,		/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamInt<px4::params::HELI_CALIB_SERVO>) _heli_calib_servo,		/**< Scale value [0, 1] for yaw rate setpoint  */
-		(ParamFloat<px4::params::MPC_MAN_TILT_MAX>) _param_mpc_man_tilt_max			/**< maximum tilt allowed for manual flight */
-
+		(ParamFloat<px4::params::MPC_MAN_TILT_MAX>) _param_mpc_man_tilt_max,			/**< maximum tilt allowed for manual flight */
+		(ParamFloat<px4::params::HELI_IDEN_FMIN>) _heli_iden_fmin,
+		(ParamFloat<px4::params::HELI_IDEN_FMAX>) _heli_iden_fmax,
+		(ParamFloat<px4::params::HELI_IDEN_AMP>) _heli_iden_amp,
+		(ParamFloat<px4::params::HELI_IDEN_T>) _heli_iden_T,
+		(ParamInt<px4::params::HELI_IDEN_N>) _heli_iden_N,
+		(ParamInt<px4::params::HELI_IDEN_C>) _heli_iden_C
 	)
 
 	matrix::Vector3f _attitude_p;		/**< P gain for attitude control */
@@ -252,6 +262,8 @@ private:
 	matrix::Vector3f _rate_int_lim;		/**< integrator state limit for rate loop */
 	matrix::Vector3f _rate_d;		/**< D gain for angular rate error */
 	matrix::Vector3f _rate_ff;		/**< Feedforward gain for desired rates */
+
+	float yawrate_ff_rotor_speed;
 
 	matrix::Vector3f _heli_rate_max;		/**< attitude rate limits in stabilized modes */
 	matrix::Vector3f _auto_rate_max;	/**< attitude rate limits in auto modes */

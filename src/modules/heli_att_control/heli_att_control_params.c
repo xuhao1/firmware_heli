@@ -262,6 +262,19 @@ PARAM_DEFINE_FLOAT(HELI_YAWRATE_D, 0.0f);
  */
 PARAM_DEFINE_FLOAT(HELI_YAWRATE_FF, 0.0f);
 
+
+/**
+ * Yaw rate feedforward by rotor speed
+ *
+ * Improves tracking performance.
+ *
+ * @min 0.0
+ * @decimal 4
+ * @increment 0.01
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_YAWRATE_RS, 0.2f);
+
 /**
  * Yaw feed forward
  *
@@ -338,7 +351,7 @@ PARAM_DEFINE_FLOAT(HELI_YAWRATE_MAX, 360.0f);
  * @increment 5
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_YAWRAUT_MAX, 45.0f);
+PARAM_DEFINE_FLOAT(HELI_YAWRAUT_MAX, 180.0f);
 
 /**
  * Max acro roll rate
@@ -621,6 +634,21 @@ PARAM_DEFINE_FLOAT(HELI_COLL_MIN, -0.2f);
 PARAM_DEFINE_INT32(HELI_ROTSPD_MODE, 1);
 
 /**
+ * HELI YAW MODE
+ *
+ * The default uses fix rotor speed
+ * If parameter use rotor speed from AUX2
+ *
+ * @min 0
+ * @max 2
+ * @value 0 Normal tail
+ * @value 1 Direct tail
+ * @value 2 Coaxial
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_INT32(HELI_TAIL_MODE, 0);
+
+/**
  * HELI CALIB SERVO MODE
  *
  *
@@ -671,7 +699,7 @@ PARAM_DEFINE_INT32(HELI_HOVER_PITCH, 0);
  * @increment 0.05
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_INT32(HELI_IDEN_FMIN, 10);
+PARAM_DEFINE_FLOAT(HELI_IDEN_FMIN, 10);
 
 /**
  * HELI MODE IDEN MAX frequency
@@ -683,7 +711,7 @@ PARAM_DEFINE_INT32(HELI_IDEN_FMIN, 10);
  * @increment 0.05
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_INT32(HELI_IDEN_FMAX, 30);
+PARAM_DEFINE_FLOAT(HELI_IDEN_FMAX, 30);
 
 /**
  * HELI MODE IDEN Amplitude
@@ -695,7 +723,7 @@ PARAM_DEFINE_INT32(HELI_IDEN_FMAX, 30);
  * @increment 0.05
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_INT32(HELI_IDEN_AMP, 30);
+PARAM_DEFINE_FLOAT(HELI_IDEN_AMP, 0.1);
 
 /**
  * HELI MODE IDEN Cyclic Time
@@ -707,7 +735,7 @@ PARAM_DEFINE_INT32(HELI_IDEN_AMP, 30);
  * @increment 0.05
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_INT32(HELI_IDEN_T, 30);
+PARAM_DEFINE_FLOAT(HELI_IDEN_T, 10);
 
 /**
  * HELI MODE IDEN Repeat Times
@@ -719,4 +747,16 @@ PARAM_DEFINE_INT32(HELI_IDEN_T, 30);
  * @increment 0.05
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_INT32(HELI_IDEN_N, 30);
+PARAM_DEFINE_INT32(HELI_IDEN_N, 3);
+
+/**
+ * HELI MODE IDEN Channel
+ *
+ * 0, 1, 2 roll pitch yaw, 3 collective, 4 rotor speed
+ * @min 0.0
+ * @max 100.0
+ * @decimal 2
+ * @increment 0.05
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_INT32(HELI_IDEN_C, 2);
