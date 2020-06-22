@@ -669,6 +669,8 @@ void HelicopterAttitudeControl::generate_attitude_acro_setpoint(float dt, matrix
     attitude_setpoint_acro.timestamp = hrt_absolute_time();
 
     attitude_setpoint_acro.yaw_sp_move_rate = 0;
+
+    _vehicle_attitude_setpoint_pub.publish(attitude_setpoint_acro);
 }
 
 void
