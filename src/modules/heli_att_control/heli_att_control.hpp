@@ -126,6 +126,10 @@ private:
 	 */
 	matrix::Vector3f pid_attenuations(float _speed);
 
+	void reset_attitude_acro_setpoint();
+
+	void generate_attitude_acro_setpoint(float dt, matrix::Vector3f rates);
+
 	void generate_attitude_setpoint(float dt, bool reset_yaw_sp);
 
 
@@ -239,6 +243,7 @@ private:
 		(ParamFloat<px4::params::HELI_COLL_MAX>) _heli_coll_max,	/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamInt<px4::params::HELI_ROTSPD_MODE>) _heli_rotor_speed_mode,		/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamInt<px4::params::HELI_TAIL_MODE>) _heli_tail_mode,		/**< Scale value [0, 1] for yaw rate setpoint  */
+		(ParamInt<px4::params::HELI_ACRO_MODE>) _heli_acro_mode,		/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamInt<px4::params::HELI_CALIB_SERVO>) _heli_calib_servo,		/**< Scale value [0, 1] for yaw rate setpoint  */
 		(ParamFloat<px4::params::MPC_MAN_TILT_MAX>) _param_mpc_man_tilt_max,			/**< maximum tilt allowed for manual flight */
 		(ParamFloat<px4::params::HELI_IDEN_FMIN>) _heli_iden_fmin,
@@ -258,6 +263,8 @@ private:
 
 	float yawrate_ff_rotor_speed;
 	float yawrate_ff_collective;
+
+	vehicle_attitude_setpoint_s attitude_setpoint_acro{};
 
 	matrix::Vector3f _heli_rate_max;		/**< attitude rate limits in stabilized modes */
 	matrix::Vector3f _auto_rate_max;	/**< attitude rate limits in auto modes */

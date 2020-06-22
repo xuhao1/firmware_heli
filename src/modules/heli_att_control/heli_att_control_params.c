@@ -491,6 +491,16 @@ PARAM_DEFINE_FLOAT(HELI_RATT_TH, 0.8f);
 PARAM_DEFINE_INT32(HELI_DIRECT_TAIL, 0);
 
 /**
+ * Helicopter acro mode
+ * 0 Directly angle velocity
+ * 1 Angle velocity feedforward with attitude pid
+ * 2 Angle velocity + angle velocity lowpass filter
+ * @boolean
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_INT32(HELI_ACRO_MODE, 0);
+
+/**
  * Cutoff frequency for the low pass filter on the D-term in the rate controller
  *
  * The D-term uses the derivative of the rate and thus is the most susceptible to noise.

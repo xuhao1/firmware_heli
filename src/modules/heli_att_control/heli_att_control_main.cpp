@@ -284,7 +284,7 @@ HelicopterAttitudeControl::control_attitude(float dt)
 Vector3f
 HelicopterAttitudeControl::pid_attenuations(float speed_sp)
 {
-    float rate = 1.78f;
+    float rate = 1.00f;
 	if (speed_sp > 0.4f) {
         //We trim our pid on rotor speed 85%
 		rate = fminf(1.0f, 1/fabsf(speed_sp)) / 1.17f;
@@ -438,6 +438,11 @@ HelicopterAttitudeControl::Run()
         vehicle_status_poll();
         vehicle_attitude_poll();;
 
+        if (!_v_control_mode.flag_armed) {
+            reset_attitude_acro_setpoint();
+        }
+
+
         if (_v_control_mode.flag_control_attitude_enabled) {
             // mavlink_log_info(&_mavlink_log_pub, "Attitude Control Enabled");
 
@@ -467,6 +472,8 @@ HelicopterAttitudeControl::Run()
 
         	_v_rates_sp_pub.publish(_v_rates_sp);
 
+            reset_attitude_acro_setpoint();
+
         } else {
             /* attitude controller disabled, poll rates setpoint topic */
             if (_v_control_mode.flag_control_manual_enabled) {
@@ -475,10 +482,22 @@ HelicopterAttitudeControl::Run()
                         math::superexpo(_manual_control_sp.y, _acro_expo_rp.get(), _acro_superexpo_rp.get()),
                         math::superexpo(-_manual_control_sp.x, _acro_expo_rp.get(), _acro_superexpo_rp.get()),
                         math::superexpo(_manual_control_sp.r, _acro_expo_y.get(), _acro_superexpo_y.get()));
-                _rates_sp = man_rate_sp.emult(_acro_rate_max);
+                Vector3f _rates_sp_stick = man_rate_sp.emult(_acro_rate_max);
                 _thrust_sp = _manual_control_sp.z;
                 auto_thrust_mode = false;
-                /* publish attitude rates setpoint */
+
+                if (_heli_acro_mode.get() == 1) {
+                    //Update attitude setpoint with stick here
+                    //Modified attitude_setpoint_acro here
+                    generate_attitude_acro_setpoint(dt, _rates_sp_stick);
+                    /* publish attitude rates setpoint */
+                    control_attitude(dt);
+                    _rates_sp = _rates_sp + _rates_sp_stick;
+                } else {
+                    _rates_sp = _rates_sp_stick;
+                    reset_attitude_acro_setpoint();
+                }
+
                 _v_rates_sp.roll = _rates_sp(0);
                 _v_rates_sp.pitch = _rates_sp(1);
                 _v_rates_sp.yaw = _rates_sp(2);
@@ -495,6 +514,8 @@ HelicopterAttitudeControl::Run()
                     _rates_sp(2) = _v_rates_sp.yaw;
                     _thrust_sp = -_v_rates_sp.thrust_body[2];
                 }
+
+                reset_attitude_acro_setpoint();
             }
         }
 
@@ -618,6 +639,35 @@ HelicopterAttitudeControl::generate_attitude_setpoint(float dt, bool reset_yaw_s
 	_landing_gear_pub.publish(_landing_gear);*/
 }
 
+void HelicopterAttitudeControl::reset_attitude_acro_setpoint() {
+    attitude_setpoint_acro.q_d = _v_att.q;
+    Eulerf euler_sp = _v_att.q;
+    attitude_setpoint_acro.pitch_body = euler_sp(1);
+    attitude_setpoint_acro.roll_body = euler_sp(0);
+    attitude_setpoint_acro.yaw_body = euler_sp(2);
+
+    attitude_setpoint_acro.q_d_valid = true;
+    attitude_setpoint_acro.timestamp = hrt_absolute_time();
+
+    attitude_setpoint.yaw_sp_move_rate = 0;
+}
+
+
+void HelicopterAttitudeControl::generate_attitude_acro_setpoint(float dt, matrix::Vector3f rates) {
+    Quatf q_sp = attitude_setpoint_acro.q_d;
+    q_sp = 0.5*q_sp.rotate(rates)*dt;
+
+    attitude_setpoint_acro.q_d = q_sp;
+    Eulerf euler_sp = q_sp;
+    attitude_setpoint_acro.pitch_body = euler_sp(1);
+    attitude_setpoint_acro.roll_body = euler_sp(0);
+    attitude_setpoint_acro.yaw_body = euler_sp(2);
+
+    attitude_setpoint_acro.q_d_valid = true;
+    attitude_setpoint_acro.timestamp = hrt_absolute_time();
+
+    attitude_setpoint.yaw_sp_move_rate = 0;
+}
 
 void
 HelicopterAttitudeControl::publish_actuator_controls()
