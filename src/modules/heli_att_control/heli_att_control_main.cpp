@@ -437,7 +437,7 @@ HelicopterAttitudeControl::Run()
         vehicle_status_poll();
         vehicle_attitude_poll();;
 
-        if (!_v_control_mode.flag_armed) {
+        if (!_v_control_mode.flag_armed || _vehicle_land_detected.maybe_landed || _vehicle_land_detected.landed) {
             reset_attitude_acro_setpoint();
         }
 
