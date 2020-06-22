@@ -375,7 +375,8 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
 
 
     /* update integral only if motors are providing enough thrust to be effective */
-    if (_coll_sp > MIN_TAKEOFF_COLL && _rotor_speed_sp > MIN_TAKEOFF_SPEED) {
+    // if (_coll_sp > MIN_TAKEOFF_COLL && _rotor_speed_sp > MIN_TAKEOFF_SPEED)
+    {
         for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
             // Perform the integration using a first order method and do not propagate the result if out of range or invalid
             float rate_i = _rates_int(i) + rates_i_scaled(i) * rates_err(i) * dt;
@@ -449,7 +450,7 @@ HelicopterAttitudeControl::Run()
                     auto_thrust_mode = false;
                     _reset_yaw_sp = _vehicle_land_detected.landed;
             } else {
-                _reset_yaw_sp = true;
+                // _reset_yaw_sp = true;
             }
 
             control_attitude(dt);

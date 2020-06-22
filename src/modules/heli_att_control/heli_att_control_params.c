@@ -351,7 +351,7 @@ PARAM_DEFINE_FLOAT(HELI_YAWRATE_MAX, 360.0f);
  * @increment 5
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_YAWRAUT_MAX, 45.0f);
+PARAM_DEFINE_FLOAT(HELI_YAWRAUT_MAX, 180.0f);
 
 /**
  * Max acro roll rate
