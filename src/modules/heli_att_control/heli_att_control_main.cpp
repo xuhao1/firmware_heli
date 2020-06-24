@@ -290,10 +290,10 @@ HelicopterAttitudeControl::control_attitude(float dt)
 
     for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
         // Perform the integration using a first order method and do not propagate the result if out of range or invalid
-        float rate_i = _att_int(i) + att_i_scaled(i) * eq(i) * dt;
+        float angle_i = _att_int(i) + att_i_scaled(i) * eq(i) * dt;
 
-        if (PX4_ISFINITE(rate_i) && rate_i > -_attitude_int_lim(i) && rate_i < _attitude_int_lim(i)) {
-            _att_int(i) = rate_i;
+        if (PX4_ISFINITE(angle_i) && angle_i > -_attitude_int_lim(i) && angle_i < _attitude_int_lim(i)) {
+            _att_int(i) = angle_i;
 
         }
 
