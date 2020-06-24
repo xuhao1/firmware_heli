@@ -91,7 +91,7 @@ PARAM_DEFINE_FLOAT(HELI_ROLL_D, 0.0f);
  * @increment 0.01
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_ROLLRATE_P, 0.2f);
+PARAM_DEFINE_FLOAT(HELI_ROLLRATE_P, 0.16f);
 
 /**
  * Roll rate I gain
@@ -103,7 +103,7 @@ PARAM_DEFINE_FLOAT(HELI_ROLLRATE_P, 0.2f);
  * @increment 0.01
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_ROLLRATE_I, 0.01f);
+PARAM_DEFINE_FLOAT(HELI_ROLLRATE_I, 1.81f);
 
 /**
  * Roll rate integrator limit
@@ -140,7 +140,7 @@ PARAM_DEFINE_FLOAT(HELI_R_INT_LIM, 0.30f);
  * @increment 0.0005
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_ROLLRATE_D, 0.00f);
+PARAM_DEFINE_FLOAT(HELI_ROLLRATE_D, 0.0035f);
 
 /**
  * Roll rate feedforward
@@ -165,7 +165,7 @@ PARAM_DEFINE_FLOAT(HELI_ROLLRATE_FF, 0.0f);
  * @increment 0.1
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_PITCH_P, 7.0f);
+PARAM_DEFINE_FLOAT(HELI_PITCH_P, 4.69f);
 
 /**
  * Pitch I gain
@@ -174,12 +174,12 @@ PARAM_DEFINE_FLOAT(HELI_PITCH_P, 7.0f);
  *
  * @unit 1/s
  * @min 0.0
- * @max 12
+ * @max 100
  * @decimal 2
  * @increment 0.1
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_PITCH_I, 1.0f);
+PARAM_DEFINE_FLOAT(HELI_PITCH_I, 49.0f);
 
 
 /**
@@ -194,7 +194,7 @@ PARAM_DEFINE_FLOAT(HELI_PITCH_I, 1.0f);
  * @increment 0.1
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_PITCH_D, 7.0f);
+PARAM_DEFINE_FLOAT(HELI_PITCH_D, 0.08f);
 
 
 /**
@@ -208,7 +208,7 @@ PARAM_DEFINE_FLOAT(HELI_PITCH_D, 7.0f);
  * @increment 0.01
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_PITCHRATE_P, 0.16f);
+PARAM_DEFINE_FLOAT(HELI_PITCHRATE_P, 0.32);
 
 /**
  * Pitch rate I gain
@@ -220,7 +220,7 @@ PARAM_DEFINE_FLOAT(HELI_PITCHRATE_P, 0.16f);
  * @increment 0.01
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_PITCHRATE_I, 0.05f);
+PARAM_DEFINE_FLOAT(HELI_PITCHRATE_I, 3.63f);
 
 /**
  * Pitch rate integrator limit
@@ -257,7 +257,7 @@ PARAM_DEFINE_FLOAT(HELI_P_INT_LIM, 0.30f);
  * @increment 0.0005
  * @group Helicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(HELI_PITCHRATE_D, 0.000f);
+PARAM_DEFINE_FLOAT(HELI_PITCHRATE_D, 0.007f);
 
 /**
  * Pitch rate feedforward
