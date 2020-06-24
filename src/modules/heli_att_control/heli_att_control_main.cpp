@@ -88,6 +88,8 @@ HelicopterAttitudeControl::parameters_updated()
 
     /* roll gains */
     _attitude_p(0) = _roll_p.get();
+    _attitude_i(0) = _roll_i.get();
+    _attitude_d(0) = _roll_d.get();
     _rate_p(0) = _roll_rate_p.get();
     _rate_i(0) = _roll_rate_i.get();
     _rate_int_lim(0) = _roll_rate_integ_lim.get();
@@ -96,6 +98,8 @@ HelicopterAttitudeControl::parameters_updated()
 
     /* pitch gains */
     _attitude_p(1) = _pitch_p.get();
+    _attitude_i(1) = _pitch_i.get();
+    _attitude_d(1) = _pitch_d.get();
     _rate_p(1) = _pitch_rate_p.get();
     _rate_i(1) = _pitch_rate_i.get();
     _rate_int_lim(1) = _pitch_rate_integ_lim.get();
@@ -104,6 +108,8 @@ HelicopterAttitudeControl::parameters_updated()
 
     /* yaw gains */
     _attitude_p(2) = _yaw_p.get();
+    _attitude_i(2) = 0;
+    _attitude_d(2) = 0;
     _rate_p(2) = _yaw_rate_p.get();
     _rate_i(2) = _yaw_rate_i.get();
     _rate_int_lim(2) = _yaw_rate_integ_lim.get();
@@ -574,7 +580,7 @@ HelicopterAttitudeControl::Run()
                 _coll_sp = _thrust_sp;
             }
 
-            if(_thrust_sp < 0.1 && ( _vehicle_land_detected.maybe_landed || _vehicle_land_detected.landed)) {
+            if(_thrust_sp < 0.1f && ( _vehicle_land_detected.maybe_landed || _vehicle_land_detected.landed)) {
                 _rotor_speed_sp = 0;
             }
 
