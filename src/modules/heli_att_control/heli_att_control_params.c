@@ -53,6 +53,34 @@
 PARAM_DEFINE_FLOAT(HELI_ROLL_P, 7.0f);
 
 /**
+ * Roll I gain
+ *
+ * Roll proportional gain, i.e. desired angular speed in rad/s for error 1 rad.
+ *
+ * @unit 1/s
+ * @min 0.0
+ * @max 12
+ * @decimal 2
+ * @increment 0.1
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_ROLL_I, 1.0f);
+
+/**
+ * Roll I gain
+ *
+ * Roll proportional gain, i.e. desired angular speed in rad/s for error 1 rad.
+ *
+ * @unit 1/s
+ * @min 0.0
+ * @max 12
+ * @decimal 2
+ * @increment 0.1
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_ROLL_D, 0.0f);
+
+/**
  * Roll rate P gain
  *
  * Roll rate proportional gain, i.e. control output for angular speed error 1 rad/s.
@@ -88,6 +116,18 @@ PARAM_DEFINE_FLOAT(HELI_ROLLRATE_I, 0.01f);
  * @group Helicopter Attitude Control
  */
 PARAM_DEFINE_FLOAT(HELI_RR_INT_LIM, 0.30f);
+
+/**
+ * Roll integrator limit
+ *
+ * Roll integrator limit. Can be set to increase the amount of integrator available to counteract disturbances or reduced to improve settling time after large roll moment trim changes.
+ *
+ * @min 0.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_R_INT_LIM, 0.30f);
 
 /**
  * Roll rate D gain
@@ -128,6 +168,36 @@ PARAM_DEFINE_FLOAT(HELI_ROLLRATE_FF, 0.0f);
 PARAM_DEFINE_FLOAT(HELI_PITCH_P, 7.0f);
 
 /**
+ * Pitch I gain
+ *
+ * Pitch proportional gain, i.e. desired angular speed in rad/s for error 1 rad.
+ *
+ * @unit 1/s
+ * @min 0.0
+ * @max 12
+ * @decimal 2
+ * @increment 0.1
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_PITCH_I, 1.0f);
+
+
+/**
+ * Pitch D gain
+ *
+ * Pitch proportional gain, i.e. desired angular speed in rad/s for error 1 rad.
+ *
+ * @unit 1/s
+ * @min 0.0
+ * @max 12
+ * @decimal 2
+ * @increment 0.1
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_PITCH_D, 7.0f);
+
+
+/**
  * Pitch rate P gain
  *
  * Pitch rate proportional gain, i.e. control output for angular speed error 1 rad/s.
@@ -163,6 +233,19 @@ PARAM_DEFINE_FLOAT(HELI_PITCHRATE_I, 0.05f);
  * @group Helicopter Attitude Control
  */
 PARAM_DEFINE_FLOAT(HELI_PR_INT_LIM, 0.30f);
+
+/**
+ * Pitch integrator limit
+ *
+ * Pitch integrator limit. Can be set to increase the amount of integrator available to counteract disturbances or reduced to improve settling time after large pitch moment trim changes.
+ *
+ * @min 0.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_P_INT_LIM, 0.30f);
+
 
 /**
  * Pitch rate D gain
@@ -681,6 +764,19 @@ PARAM_DEFINE_INT32(HELI_TAIL_MODE, 0);
  * @group Helicopter Attitude Control
  */
 PARAM_DEFINE_INT32(HELI_CALIB_SERVO, 0);
+
+
+/**
+ * HELI cyclic gain
+ * Adjust this parameter to make sure the max cyclic angle equals 8 deg
+ *
+ * @min -10.0
+ * @max 10.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Helicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(HELI_CYCLIC_GAIN, 1.0f);
 
 /**
  * HELI TRIM ROLL ANGLE

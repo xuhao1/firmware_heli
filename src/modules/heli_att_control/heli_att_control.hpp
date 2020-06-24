@@ -168,6 +168,8 @@ private:
 	float _loop_update_rate_hz{initial_update_rate_hz};          /**< current rate-controller loop update rate in [Hz] */
 
 	matrix::Vector3f _rates_prev;			/**< angular rates on previous step */
+	matrix::Vector3f _att_err_prev;			/**< angular rates on previous step */
+	matrix::Vector3f _att_int;			/**< angular rates on previous step */
 	matrix::Vector3f _rates_prev_filtered;		/**< angular rates on previous step (low-pass filtered) */
 	matrix::Vector3f _rates_sp;			/**< angular rates setpoint */
 	matrix::Vector3f _rates_int;			/**< angular rates integral error */
@@ -194,6 +196,10 @@ private:
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::HELI_ROLL_P>) _roll_p,
+		(ParamFloat<px4::params::HELI_ROLL_I>) _roll_i,
+		(ParamFloat<px4::params::HELI_ROLL_D>) _roll_d,
+		(ParamFloat<px4::params::HELI_R_INT_LIM>) _roll_integ_lim,
+
 		(ParamFloat<px4::params::HELI_ROLLRATE_P>) _roll_rate_p,
 		(ParamFloat<px4::params::HELI_ROLLRATE_I>) _roll_rate_i,
 		(ParamFloat<px4::params::HELI_RR_INT_LIM>) _roll_rate_integ_lim,
@@ -201,6 +207,12 @@ private:
 		(ParamFloat<px4::params::HELI_ROLLRATE_FF>) _roll_rate_ff,
 
 		(ParamFloat<px4::params::HELI_PITCH_P>) _pitch_p,
+		(ParamFloat<px4::params::HELI_PITCH_I>) _pitch_i,
+		(ParamFloat<px4::params::HELI_PITCH_D>) _pitch_d,
+		(ParamFloat<px4::params::HELI_P_INT_LIM>) _pitch_integ_lim,
+
+		(ParamFloat<px4::params::HELI_CYCLIC_GAIN>) _cyclic_gain,
+
 		(ParamFloat<px4::params::HELI_PITCHRATE_P>) _pitch_rate_p,
 		(ParamFloat<px4::params::HELI_PITCHRATE_I>) _pitch_rate_i,
 		(ParamFloat<px4::params::HELI_PR_INT_LIM>) _pitch_rate_integ_lim,
@@ -255,6 +267,10 @@ private:
 	)
 
 	matrix::Vector3f _attitude_p;		/**< P gain for attitude control */
+	matrix::Vector3f _attitude_i;		/**< P gain for attitude control */
+	matrix::Vector3f _attitude_d;		/**< P gain for attitude control */
+	matrix::Vector3f _attitude_int_lim;		/**< P gain for attitude control */
+
 	matrix::Vector3f _rate_p;		/**< P gain for angular rate error */
 	matrix::Vector3f _rate_i;		/**< I gain for angular rate error */
 	matrix::Vector3f _rate_int_lim;		/**< integrator state limit for rate loop */

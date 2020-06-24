@@ -204,9 +204,15 @@ HelicopterAttitudeControl::control_attitude(float dt)
 
     /* prepare yaw weight from the ratio between roll/pitch and yaw gains */
     Vector3f attitude_gain = _attitude_p;
+
+
     const float roll_pitch_gain = (attitude_gain(0) + attitude_gain(1)) / 2.f;
     const float yaw_w = math::constrain(attitude_gain(2) / roll_pitch_gain, 0.f, 1.f);
     attitude_gain(2) = roll_pitch_gain;
+
+    Vector3f att_i_scaled = _attitude_i.emult(pid_attenuations(_rotor_speed_sp));
+    Vector3f att_d_scaled = _attitude_d.emult(pid_attenuations(_rotor_speed_sp));
+    Vector3f attitude_gain_scaled = attitude_gain.emult(pid_attenuations(_rotor_speed_sp));
 
     /* get estimated and desired vehicle attitude */
     Quatf q(_v_att.q);
@@ -248,7 +254,14 @@ HelicopterAttitudeControl::control_attitude(float dt)
     Vector3f eq = 2.f * math::signNoZero(qe(0)) * qe.imag();
 
     /* calculate angular rates setpoint */
-    _rates_sp = eq.emult(attitude_gain);
+    // _rates_sp = eq.emult(attitude_gain_scaled) +
+                //    _att_int -
+                //    att_d_scaled.emult(eq - _att_err_prev) / dt;
+    _rates_sp.setZero();
+
+    _att_control = eq.emult(attitude_gain_scaled) +
+                   _att_int -
+                   att_d_scaled.emult(eq - _att_err_prev) / dt;
 
     /* Feed forward the yaw setpoint rate.
      * The yaw_feedforward_rate is a commanded rotation around the world z-axis,
@@ -273,6 +286,24 @@ HelicopterAttitudeControl::control_attitude(float dt)
             _rates_sp(i) = math::constrain(_rates_sp(i), -_heli_rate_max(i), _heli_rate_max(i));
         }
     }
+
+
+    for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
+        // Perform the integration using a first order method and do not propagate the result if out of range or invalid
+        float rate_i = _att_int(i) + att_i_scaled(i) * eq(i) * dt;
+
+        if (PX4_ISFINITE(rate_i) && rate_i > -_attitude_int_lim(i) && rate_i < _attitude_int_lim(i)) {
+            _att_int(i) = rate_i;
+
+        }
+
+        if (!_v_control_mode.flag_armed || _vehicle_status.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+                _att_int(i) = 0;
+        }
+
+        _att_int(i) = math::constrain(_att_int(i), -_attitude_int_lim(i), _attitude_int_lim(i));
+    }
+
 }
 
 /*
@@ -325,12 +356,12 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
 
     /* apply low-pass filtering to the rates for D-term */
 
-    _att_control = rates_p_scaled.emult(rates_err) +
+    _att_control += rates_p_scaled.emult(rates_err) +
                    _rates_int -
-                   rates_d_scaled.emult(rates - _rates_prev) / dt +
+                   rates_d_scaled.emult(rates_err - _rates_prev) / dt +
                    _rate_ff.emult(_rates_sp);
 
-    _rates_prev = rates;
+    _rates_prev = rates_err;
     _rates_prev_filtered = rates;
 
     _att_control(0) = _lp_filters[0].apply(_att_control(0));
@@ -374,24 +405,19 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
     }
 
 
-    /* update integral only if motors are providing enough thrust to be effective */
-    // if (_coll_sp > MIN_TAKEOFF_COLL && _rotor_speed_sp > MIN_TAKEOFF_SPEED)
-    {
-        for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
-            // Perform the integration using a first order method and do not propagate the result if out of range or invalid
-            float rate_i = _rates_int(i) + rates_i_scaled(i) * rates_err(i) * dt;
-
-            if (PX4_ISFINITE(rate_i) && rate_i > -_rate_int_lim(i) && rate_i < _rate_int_lim(i)) {
-                _rates_int(i) = rate_i;
-
-            }
-        }
-    }
-
     for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
+        // Perform the integration using a first order method and do not propagate the result if out of range or invalid
+        float rate_i = _rates_int(i) + rates_i_scaled(i) * rates_err(i) * dt;
+
+        if (PX4_ISFINITE(rate_i) && rate_i > -_rate_int_lim(i) && rate_i < _rate_int_lim(i)) {
+            _rates_int(i) = rate_i;
+
+        }
+
         if (!_v_control_mode.flag_armed || _vehicle_status.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
                 _rates_int(i) = 0;
         }
+
         _rates_int(i) = math::constrain(_rates_int(i), -_rate_int_lim(i), _rate_int_lim(i));
     }
 
@@ -543,7 +569,6 @@ HelicopterAttitudeControl::Run()
             control_attitude_rates(dt, rates);
 
             /* publish actuator controls */
-
 
             publish_actuator_controls();
 

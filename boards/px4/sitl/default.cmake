@@ -38,6 +38,7 @@ px4_add_board(
 		mavlink
 		mc_att_control
 		mc_pos_control
+		heli_att_control
 		navigator
 		replay
 		sensors
