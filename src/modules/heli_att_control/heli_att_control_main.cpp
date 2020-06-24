@@ -705,16 +705,34 @@ HelicopterAttitudeControl::publish_actuator_controls()
     float coll_min = _heli_coll_min.get();
     _actual_coll_sp = (coll_max - coll_min) * _coll_sp + coll_min;
 
-    if ( _heli_calib_servo.get() ) {
+    if ( _heli_calib_servo.get() > 0 ) {
+
+        _rotor_speed_sp = 0;
+        _actual_coll_sp = (coll_max + coll_min) / 2;
         _att_control(0) = _heli_trim_ail.get();
         _att_control(1) = _heli_trim_ele.get();
         _att_control(2) = _heli_trim_rud.get();
+
+        if (_heli_calib_servo.get() == 2) {
+            _actual_coll_sp = coll_max;
+        }
+
+        if (_heli_calib_servo.get() == 3) {
+            _actual_coll_sp = coll_min;
+        }
+
+        if (_heli_calib_servo.get() == 4) {
+            _att_control(0) = _heli_trim_ail.get() + _cyclic_gain.get();
+        }
+
         // _actual_coll_sp = 0;
+
     } else {
-        _att_control(0) = _att_control(0) + _heli_trim_ail.get();
-        _att_control(1) = _att_control(1) + _heli_trim_ele.get();
+        _att_control(0) = _att_control(0)*_cyclic_gain.get() + _heli_trim_ail.get();
+        _att_control(1) = _att_control(1)*_cyclic_gain.get() + _heli_trim_ele.get();
         _att_control(2) = _att_control(2) + _heli_trim_rud.get();
     }
+
     _actuators.control[0] = (PX4_ISFINITE(_att_control(0))) ? _att_control(0) : 0.0f;
     _actuators.control[1] = (PX4_ISFINITE(_att_control(1))) ? _att_control(1) : 0.0f;
     _actuators.control[2] = (PX4_ISFINITE(_att_control(2))) ? _att_control(2) : 0.0f;

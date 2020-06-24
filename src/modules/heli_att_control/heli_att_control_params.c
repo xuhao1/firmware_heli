@@ -758,9 +758,12 @@ PARAM_DEFINE_INT32(HELI_TAIL_MODE, 0);
  *
  *
  * @min 0
- * @max 1
+ * @max 10
  * @value 0 Servo move normally
- * @value 1 Servo fixed to install.
+ * @value 1 Servo fixed to install with zero collective.
+ * @value 2 Max collective
+ * @value 3 Min collective
+ * @value 4 Max roll
  * @group Helicopter Attitude Control
  */
 PARAM_DEFINE_INT32(HELI_CALIB_SERVO, 0);
