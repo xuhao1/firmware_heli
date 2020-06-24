@@ -560,8 +560,11 @@ HelicopterAttitudeControl::Run()
             }
         } else {
             _rotor_speed_sp = _thrust_sp;
-            _coll_sp = _manual_control_sp.aux1;
+            _coll_sp = (_manual_control_sp.aux1 + 1)*0.5f;
         }
+
+        _rotor_speed_sp = math::constrain(_rotor_speed_sp, 0.0f, 1.0f);
+        _coll_sp = math::constrain(_coll_sp, 0.0f, 1.0f);
 
         if (!_v_control_mode.flag_armed) {
             _rotor_speed_sp = 0;
