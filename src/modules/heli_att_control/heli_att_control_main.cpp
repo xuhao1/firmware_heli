@@ -377,7 +377,8 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
 
         _att_control(0) = _lp_filters[0].apply(_att_control(0));
         _att_control(1) = _lp_filters[1].apply(_att_control(1));
-        _att_control(2) = _lp_filters[2].apply(_att_control(2)) + yawrate_ff_rotor_speed * _rotor_speed_sp + yawrate_ff_collective * fabs(_coll_sp);
+        _att_control(2) = _lp_filters[2].apply(_att_control(2)) + yawrate_ff_rotor_speed * _rotor_speed_sp +
+            yawrate_ff_collective * fabs(_coll_sp)*_rotor_speed_sp;
     }
 
     _rates_prev = rates_err;
