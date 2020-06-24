@@ -216,7 +216,7 @@ PARAM_DEFINE_FLOAT(HELI_PITCHRATE_P, 0.32);
  * Pitch rate integral gain. Can be set to compensate static thrust difference or gravity center offset.
  *
  * @min 0.0
- * @decimal 3
+ * @decimal 4
  * @increment 0.01
  * @group Helicopter Attitude Control
  */
@@ -228,7 +228,7 @@ PARAM_DEFINE_FLOAT(HELI_PITCHRATE_I, 3.63f);
  * Pitch rate integrator limit. Can be set to increase the amount of integrator available to counteract disturbances or reduced to improve settling time after large pitch moment trim changes.
  *
  * @min 0.0
- * @decimal 2
+ * @decimal 4
  * @increment 0.01
  * @group Helicopter Attitude Control
  */
@@ -240,7 +240,7 @@ PARAM_DEFINE_FLOAT(HELI_PR_INT_LIM, 0.30f);
  * Pitch integrator limit. Can be set to increase the amount of integrator available to counteract disturbances or reduced to improve settling time after large pitch moment trim changes.
  *
  * @min 0.0
- * @decimal 2
+ * @decimal 4
  * @increment 0.01
  * @group Helicopter Attitude Control
  */
