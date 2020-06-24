@@ -119,7 +119,7 @@ private:
 	/**
 	 * Attitude rates controller.
 	 */
-	void		control_attitude_rates(float dt, matrix::Vector3f rates);
+	void		control_attitude_rates(float dt, matrix::Vector3f rates, bool disable_roll_pitch_rate_control);
 
 	/**
 	 * Throttle PID attenuation.

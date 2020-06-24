@@ -262,8 +262,9 @@ HelicopterAttitudeControl::control_attitude(float dt)
     _rates_sp.setZero();
 
     _att_control = eq.emult(attitude_gain_scaled) +
-                   _att_int -
-                   att_d_scaled.emult(eq - _att_err_prev) / dt;
+                   _att_int - att_d_scaled.emult(eq - _att_err_prev) / dt;
+
+    _att_err_prev = eq;
 
     /* Feed forward the yaw setpoint rate.
      * The yaw_feedforward_rate is a commanded rotation around the world z-axis,
@@ -318,10 +319,12 @@ Vector3f
 HelicopterAttitudeControl::pid_attenuations(float speed_sp)
 {
     float rate = 1.00f;
-	if (speed_sp > 0.4f) {
-        //We trim our pid on rotor speed 85%
-		rate = fminf(1.0f, 1/fabsf(speed_sp)) / 1.17f;
-	}
+    if (speed_sp < 0.6f) {
+        speed_sp = 0.6f;
+    }
+
+    //We trim our pid on rotor speed 85%
+    rate = fminf(1.0f, 1/fabsf(speed_sp)) / 1.17f;
 
 	Vector3f pidAttenuationPerAxis;
 	pidAttenuationPerAxis(AXIS_INDEX_ROLL) = rate;
@@ -342,7 +345,7 @@ HelicopterAttitudeControl::pid_attenuations(float speed_sp)
  * Output: '_att_control' vector
  */
 void
-HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rates)
+HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rates, bool disable_roll_pitch_rate_control)
 {
     /* reset integral if disarmed */
     if (!_v_control_mode.flag_armed) {
@@ -358,18 +361,27 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
 
     /* apply low-pass filtering to the rates for D-term */
 
-    _att_control += rates_p_scaled.emult(rates_err) +
-                   _rates_int -
-                   rates_d_scaled.emult(rates_err - _rates_prev) / dt +
-                   _rate_ff.emult(_rates_sp);
 
-    _rates_prev = rates_err;
-    _rates_prev_filtered = rates;
+    if (disable_roll_pitch_rate_control) {
+        Vector3f ctrl = rates_p_scaled.emult(rates_err) +
+            _rates_int -
+            rates_d_scaled.emult(rates_err - _rates_prev) / dt +
+            _rate_ff.emult(_rates_sp);
 
-    _att_control(0) = _lp_filters[0].apply(_att_control(0));
-    _att_control(1) = _lp_filters[1].apply(_att_control(1));
-    _att_control(2) = _lp_filters[2].apply(_att_control(2)) + yawrate_ff_rotor_speed * _rotor_speed_sp + yawrate_ff_collective * fabs(_coll_sp);
+        _att_control(2) += _lp_filters[2].apply(ctrl(2));
+    } else {
+        _att_control += rates_p_scaled.emult(rates_err) +
+                    _rates_int -
+                    rates_d_scaled.emult(rates_err - _rates_prev) / dt +
+                    _rate_ff.emult(_rates_sp);
 
+        _rates_prev = rates_err;
+        _rates_prev_filtered = rates;
+
+        _att_control(0) = _lp_filters[0].apply(_att_control(0));
+        _att_control(1) = _lp_filters[1].apply(_att_control(1));
+        _att_control(2) = _lp_filters[2].apply(_att_control(2)) + yawrate_ff_rotor_speed * _rotor_speed_sp + yawrate_ff_collective * fabs(_coll_sp);
+    }
 
     if (_manual_control_sp.aux3 > 0.9f) {
         //Will start sweep procedure
@@ -406,7 +418,6 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
         is_in_sweep = false;
     }
 
-
     for (int i = AXIS_INDEX_ROLL; i < AXIS_COUNT; i++) {
         // Perform the integration using a first order method and do not propagate the result if out of range or invalid
         float rate_i = _rates_int(i) + rates_i_scaled(i) * rates_err(i) * dt;
@@ -416,7 +427,8 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
 
         }
 
-        if (!_v_control_mode.flag_armed || _vehicle_status.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+        if (!_v_control_mode.flag_armed || _vehicle_status.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
+            || (disable_roll_pitch_rate_control && i != AXIS_INDEX_YAW)) {
                 _rates_int(i) = 0;
         }
 
@@ -469,6 +481,8 @@ HelicopterAttitudeControl::Run()
             reset_attitude_acro_setpoint();
         }
 
+        bool disable_roll_pitch_rate_control = false;
+
 
         if (_v_control_mode.flag_control_attitude_enabled) {
             // mavlink_log_info(&_mavlink_log_pub, "Attitude Control Enabled");
@@ -489,7 +503,7 @@ HelicopterAttitudeControl::Run()
             }
 
             control_attitude(dt);
-
+            disable_roll_pitch_rate_control = true;
             /* publish attitude rates setpoint */
             _v_rates_sp.roll = _rates_sp(0);
             _v_rates_sp.pitch = _rates_sp(1);
@@ -571,7 +585,7 @@ HelicopterAttitudeControl::Run()
         }
 
         if (_v_control_mode.flag_control_rates_enabled) {
-            control_attitude_rates(dt, rates);
+            control_attitude_rates(dt, rates, disable_roll_pitch_rate_control);
 
             /* publish actuator controls */
 
