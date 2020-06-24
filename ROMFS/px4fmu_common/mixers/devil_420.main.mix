@@ -46,3 +46,12 @@ This would be the motor speed control output from governor power demand- not sur
 
 M: 1
 S: 0 3      0  20000 -10000 -10000  10000
+
+Output 5 - Direct Drive tail Mixer
+----------------
+Tail Motor = Yaw (control index = 2)
+
+M: 2
+S: 0 2  -10000  -10000      0 -10000  10000
+S: 0 3  1  1      0 -10000  10000
+

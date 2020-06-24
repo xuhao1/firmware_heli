@@ -76,6 +76,8 @@ HelicopterAttitudeControl::HelicopterAttitudeControl():
     _att_control.zero();
 
     parameters_updated();
+
+    reset_attitude_acro_setpoint();
 }
 
 
@@ -679,9 +681,10 @@ void HelicopterAttitudeControl::reset_attitude_acro_setpoint() {
 
 
 void HelicopterAttitudeControl::generate_attitude_acro_setpoint(float dt, matrix::Vector3f rates) {
+    static int count = 0;
     Quatf q_sp(attitude_setpoint_acro.q_d);
-    Quatf omg(0, rates(1), rates(2), rates(3));
-    q_sp = q_sp + omg*q_sp*dt*0.5f;
+    Quatf omg(0, rates(0), rates(1), rates(2));
+    q_sp = q_sp + q_sp*omg*dt*0.5f;
     q_sp.normalize();
 
     q_sp.copyTo(attitude_setpoint_acro.q_d);
@@ -689,6 +692,18 @@ void HelicopterAttitudeControl::generate_attitude_acro_setpoint(float dt, matrix
     attitude_setpoint_acro.pitch_body = euler_sp(1);
     attitude_setpoint_acro.roll_body = euler_sp(0);
     attitude_setpoint_acro.yaw_body = euler_sp(2);
+
+    if(count++ % 100 == -1) {
+        mavlink_log_info(&_mavlink_log_pub, "AcroSP ATT %3.1f %3.1f %3.1f R %3.1f %3.1f %3.1f",
+            (double)attitude_setpoint_acro.roll_body * 180.0 / M_PI,
+            (double)attitude_setpoint_acro.pitch_body * 180.0 / M_PI,
+            (double)attitude_setpoint_acro.yaw_body * 180.0 / M_PI,
+            (double)rates(0) * 180.0 / M_PI,
+            (double)rates(1) * 180.0 / M_PI,
+            (double)rates(2) * 180.0 / M_PI
+        );
+
+    }
 
     attitude_setpoint_acro.q_d_valid = true;
     attitude_setpoint_acro.timestamp = hrt_absolute_time();
