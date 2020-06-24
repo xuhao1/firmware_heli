@@ -275,7 +275,7 @@ HelicopterAttitudeControl::control_attitude(float dt)
      * such that it can be added to the rates setpoint.
      */
     Vector3f yaw_feedforward_rate = q.inversed().dcm_z();
-    yaw_feedforward_rate *= _v_att_sp.yaw_sp_move_rate * _yaw_ff.get();
+    yaw_feedforward_rate += _v_att_sp.yaw_sp_move_rate * _yaw_ff.get();
     _rates_sp += yaw_feedforward_rate;
 
 
