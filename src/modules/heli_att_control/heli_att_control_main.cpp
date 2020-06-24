@@ -268,7 +268,7 @@ HelicopterAttitudeControl::control_attitude(float dt)
     _rates_sp.setZero();
 
     _att_control = eq.emult(attitude_gain_scaled) +
-                   _att_int - att_d_scaled.emult(eq - _att_err_prev) / dt;
+                   _att_int + att_d_scaled.emult(eq - _att_err_prev) / dt;
 
     _att_err_prev = eq;
 
@@ -282,7 +282,7 @@ HelicopterAttitudeControl::control_attitude(float dt)
      */
     Vector3f yaw_feedforward_rate = q.inversed().dcm_z();
     yaw_feedforward_rate += _v_att_sp.yaw_sp_move_rate * _yaw_ff.get();
-    _rates_sp += yaw_feedforward_rate;
+    _rates_sp(2) += yaw_feedforward_rate(2);
 
 
     /* limit rates */
@@ -377,7 +377,7 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
         _att_control(2) += _lp_filters[2].apply(ctrl(2));
     } else {
         _att_control += rates_p_scaled.emult(rates_err) +
-                    _rates_int -
+                    _rates_int +
                     rates_d_scaled.emult(rates_err - _rates_prev) / dt +
                     _rate_ff.emult(_rates_sp);
 
@@ -580,9 +580,9 @@ HelicopterAttitudeControl::Run()
                 _coll_sp = _thrust_sp;
             }
 
-            if(_thrust_sp < 0.1f && ( _vehicle_land_detected.maybe_landed || _vehicle_land_detected.landed)) {
-                _rotor_speed_sp = 0;
-            }
+            // if(_thrust_sp < 0.1f && ( _vehicle_land_detected.maybe_landed || _vehicle_land_detected.landed)) {
+                // _rotor_speed_sp = 0;
+            // }
 
         } else {
             _rotor_speed_sp = _thrust_sp;
@@ -737,6 +737,7 @@ void HelicopterAttitudeControl::generate_attitude_acro_setpoint(float dt, matrix
     attitude_setpoint_acro.q_d_valid = true;
     attitude_setpoint_acro.timestamp = hrt_absolute_time();
 
+	attitude_setpoint_acro.thrust_body[2] = -_manual_control_sp.z;
     attitude_setpoint_acro.yaw_sp_move_rate = 0;
 
     _vehicle_attitude_setpoint_pub.publish(attitude_setpoint_acro);
