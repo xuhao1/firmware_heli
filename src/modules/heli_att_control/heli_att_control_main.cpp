@@ -572,6 +572,11 @@ HelicopterAttitudeControl::Run()
                 _rotor_speed_sp = _thrust_sp;
                 _coll_sp = _thrust_sp;
             }
+
+            if(_thrust_sp < 0.1 && ( _vehicle_land_detected.maybe_landed || _vehicle_land_detected.landed)) {
+                _rotor_speed_sp = 0;
+            }
+
         } else {
             _rotor_speed_sp = _thrust_sp;
             _coll_sp = (_manual_control_sp.aux1 + 1)*0.5f;
