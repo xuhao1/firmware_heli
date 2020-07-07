@@ -1,0 +1,36 @@
+Helicopter 120 degree Cyclic-Collective-Pitch Mixing (CCPM) for PX4FMU
+==================================================
+
+Output 0 - Left Servo Mixer
+-----------------
+Left Servo = Collective (Thurst - 3) - 0.5 * Elevator (Pitch - 1) + 0.866 * Aileron (Roll - 0)
+
+M: 2
+S: 0 0    5000    5000      0 -10000  10000
+S: 0 1   5000   5000      0 -10000  10000
+
+
+Output 1 - Right Servo Mixer
+----------------
+Right Servo = Collective (Thurst - 3) - 0.5 * Elevator (Pitch - 1) - 0.866 * Aileron (Roll - 0)
+
+
+M: 2
+S: 0 1   -5000   -5000      0 -10000  10000
+S: 0 0   5000   5000      0 -10000  10000
+
+Output 3 - Motor speed mixer 1
+----------------
+This would be the motor speed control output from governor power demand- not sure what index to use here?
+
+M: 2
+S: 0 2  -3000  -3000      0 -10000  10000
+S: 0 3      0  20000 -10000 -10000  10000
+
+Output 4 - Motor speed mixer 2
+-----------------
+This would be the motor speed control output from governor power demand- not sure what index to use here?
+
+M: 2
+S: 0 2  -3000  -3000      0 -10000  10000
+S: 0 3      0  20000 -10000 -10000  10000

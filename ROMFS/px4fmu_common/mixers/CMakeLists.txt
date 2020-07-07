@@ -88,4 +88,5 @@ px4_add_romfs_files(
 	zmr250.main.mix
 	gaui.main.mix
 	devil_420.main.mix
+	coaxial.main.mix
 )

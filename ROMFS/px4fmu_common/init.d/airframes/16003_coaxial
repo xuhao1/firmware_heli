@@ -1,0 +1,61 @@
+#!nsh
+#
+# @name Coaxial Swarm Helicopter
+#
+# @type Helicopter
+# @class Copter
+#
+# @maintainer Bart Slinger <bartslinger@gmail.com>
+#
+# @output MAIN1 left swashplate servo
+# @output MAIN2 rear swashplate servo
+# @output MAIN3 right swashplate servo
+# @output MAIN4 tail-rotor servo
+# @output MAIN5 main motor
+#
+
+sh /etc/init.d/rc.heli_defaults
+
+# Configure as helicopter (number 4 defined in commander_helper.cpp)
+set MAV_TYPE 4
+
+set MIXER coaxial
+set PWM_DISARMED 900
+set PWM_RATE 333
+set PWM_OUT 1234 # or 12345678
+
+if [ $AUTOCNF == yes ]
+then
+	param set PWM_MIN 1000
+	param set PWM_MAX 2000
+
+	param set MPC_THR_MIN 0.06
+	param set MPC_MANTHR_MIN 0.06
+
+	param set PWM_MAIN_DIS1 1500
+	param set PWM_MAIN_DIS2 1500
+	param set PWM_MAIN_DIS3 1500
+	param set PWM_MAIN_DIS4 760
+	param set PWM_MAIN_DIS5 900
+	param set CBRK_IO_SAFETY 22027
+	param set HELI_COLL_MAX 0.4
+	param set HELI_COLL_MIN -0.2
+	param set HELI_FIXED_SPEED 0.7
+	param set HELI_ROTSPD_MODE 1
+
+	param set HELI_PITCHRATE_I 0.05
+	param set HELI_PITCHRATE_P 0.1
+	param set HELI_PITCHRATE_MAX 720
+
+	param set HELI_ROLLRATE_I 0.05
+	param set HELI_ROLLRATE_P 0.1
+	param set HELI_ROLLRATE_MAX 720
+
+	param set HELI_ACRO_R_MAX 300
+	param set HELI_ACRO_P_MAX 300
+	param set HELI_ACRO_Y_MAX 300
+
+	param set MC_PITCH_P 6.5
+	param set MC_ROLL_P 6.5
+	param set COM_PREARM_MODE 2
+fi

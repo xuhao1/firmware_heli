@@ -142,6 +142,7 @@ px4_add_romfs_files(
 
 	16001_helicopter
 	16002_gaui450
+	16003_coaxial
 	16004_devil420
 
 	24001_dodeca_cox
