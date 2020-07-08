@@ -262,13 +262,16 @@ HelicopterAttitudeControl::control_attitude(float dt)
     Vector3f eq = 2.f * math::signNoZero(qe(0)) * qe.imag();
 
     /* calculate angular rates setpoint */
-    // _rates_sp = eq.emult(attitude_gain_scaled) +
-                //    _att_int -
-                //    att_d_scaled.emult(eq - _att_err_prev) / dt;
-    _rates_sp.setZero();
+    _rates_sp = eq.emult(attitude_gain_scaled) +
+                   _att_int -
+                   att_d_scaled.emult(eq - _att_err_prev) / dt;
 
-    _att_control = eq.emult(attitude_gain_scaled) +
-                   _att_int + att_d_scaled.emult(eq - _att_err_prev) / dt;
+    // _rates_sp.setZero();
+
+    _att_control.setZero();
+
+    // _att_control = eq.emult(attitude_gain_scaled) +
+                //    _att_int + att_d_scaled.emult(eq - _att_err_prev) / dt;
 
     _att_err_prev = eq;
 
@@ -281,7 +284,7 @@ HelicopterAttitudeControl::control_attitude(float dt)
      * such that it can be added to the rates setpoint.
      */
     Vector3f yaw_feedforward_rate = q.inversed().dcm_z();
-    yaw_feedforward_rate += _v_att_sp.yaw_sp_move_rate * _yaw_ff.get();
+    yaw_feedforward_rate *= _v_att_sp.yaw_sp_move_rate * _yaw_ff.get();
     _rates_sp(2) += yaw_feedforward_rate(2);
 
 
@@ -364,6 +367,7 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
 
     /* angular rates error */
     Vector3f rates_err = _rates_sp - rates;
+    Vector3f rates_filtered = rates;
 
     /* apply low-pass filtering to the rates for D-term */
 
@@ -371,14 +375,14 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
     if (disable_roll_pitch_rate_control) {
         Vector3f ctrl = rates_p_scaled.emult(rates_err) +
             _rates_int -
-            rates_d_scaled.emult(rates_err - _rates_prev) / dt +
+            rates_d_scaled.emult(rates_filtered - _rates_prev_filtered) / dt +
             _rate_ff.emult(_rates_sp);
 
         _att_control(2) += _lp_filters[2].apply(ctrl(2));
     } else {
         _att_control += rates_p_scaled.emult(rates_err) +
                     _rates_int +
-                    rates_d_scaled.emult(rates_err - _rates_prev) / dt +
+                    rates_d_scaled.emult(rates_filtered - _rates_prev_filtered) / dt +
                     _rate_ff.emult(_rates_sp);
 
         _att_control(0) = _lp_filters[0].apply(_att_control(0));
@@ -387,7 +391,7 @@ HelicopterAttitudeControl::control_attitude_rates(float dt, matrix::Vector3f rat
             yawrate_ff_collective * fabs(_coll_sp)*_rotor_speed_sp;
     }
 
-    _rates_prev = rates_err;
+    _rates_prev = rates;
     _rates_prev_filtered = rates;
 
     if (_manual_control_sp.aux3 > 0.9f) {
@@ -510,7 +514,10 @@ HelicopterAttitudeControl::Run()
             }
 
             control_attitude(dt);
-            disable_roll_pitch_rate_control = true;
+
+            //Disable attitude directly control roll pitch, then comment this
+            // disable_roll_pitch_rate_control = true;
+
             /* publish attitude rates setpoint */
             _v_rates_sp.roll = _rates_sp(0);
             _v_rates_sp.pitch = _rates_sp(1);

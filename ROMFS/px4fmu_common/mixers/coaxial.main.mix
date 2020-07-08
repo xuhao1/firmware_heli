@@ -24,7 +24,7 @@ Output 3 - Motor speed mixer 1
 This would be the motor speed control output from governor power demand- not sure what index to use here?
 
 M: 2
-S: 0 2  -3000  -3000      0 -10000  10000
+S: 0 2  3000  3000      0 -10000  10000
 S: 0 3      0  20000 -10000 -10000  10000
 
 Output 4 - Motor speed mixer 2
