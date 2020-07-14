@@ -777,6 +777,9 @@ HelicopterAttitudeControl::publish_actuator_controls()
             _att_control(0) = _heli_trim_ail.get() + _cyclic_gain.get();
         }
 
+        if (_heli_calib_servo.get() == 5) {
+            _att_control(1) = _heli_trim_ele.get() + _cyclic_gain.get();
+        }
         // _actual_coll_sp = 0;
 
     } else {

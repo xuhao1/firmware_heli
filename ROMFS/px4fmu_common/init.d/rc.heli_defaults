@@ -42,6 +42,13 @@ then
 	param set PWM_MAIN_DIS6 1520
 	param set PWM_MAIN_MIN6 1100
 	param set PWM_MAIN_MAX6 1900
+
+	param set HELI_ROTSPD_MODE 2
+	param set HELI_TAIL_MODE 2
+	param set HELI_YAWFF_COL 0
+	param set HELI_YAWFF_RS 0
+	param set HELI_YAWFF_COL 0
+	param set HELI_YAW_FF 0.5
 fi
 
 #
