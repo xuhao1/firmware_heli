@@ -1744,6 +1744,25 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 	/* fallthrough */
 	case MAVLINK_MODE_CUSTOM:
 		//stream nothing
+		configure_stream_local("ACTUATOR_CONTROL_TARGET0", 100.0f);
+		configure_stream_local("ATTITUDE_QUATERNION", 100.0f);
+		configure_stream_local("ATTITUDE_TARGET", 100.0f);
+		configure_stream_local("BATTERY_STATUS", 0.5f);
+		configure_stream_local("CAMERA_IMAGE_CAPTURED", unlimited_rate);
+		configure_stream_local("CAMERA_TRIGGER", unlimited_rate);
+		configure_stream_local("COLLISION", unlimited_rate);
+		configure_stream_local("ESTIMATOR_STATUS", 1.0f);
+		configure_stream_local("EXTENDED_SYS_STATE", 5.0f);
+		configure_stream_local("HIGHRES_IMU", unlimited_rate);
+		configure_stream_local("LOCAL_POSITION_NED", 30.0f);
+		configure_stream_local("PING", 1.0f);
+		configure_stream_local("POSITION_TARGET_LOCAL_NED", 10.0f);
+		configure_stream_local("RC_CHANNELS", 20.0f);
+		configure_stream_local("SERVO_OUTPUT_RAW_0", 100.0f);
+		configure_stream_local("SYS_STATUS", 5.0f);
+		configure_stream_local("SYSTEM_TIME", 1.0f);
+		configure_stream_local("TIMESYNC", 10.0f);
+		configure_stream_local("TRAJECTORY_REPRESENTATION_WAYPOINTS", 5.0f);
 		break;
 
 	case MAVLINK_MODE_CONFIG:

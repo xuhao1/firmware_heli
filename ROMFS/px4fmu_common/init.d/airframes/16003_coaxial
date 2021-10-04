@@ -59,3 +59,6 @@ then
 	param set MC_ROLL_P 6.5
 	param set COM_PREARM_MODE 2
 fi
+
+
+mavlink start -d /dev/ttyS3 -b 921600 -m custom -r 92160

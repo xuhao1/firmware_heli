@@ -57,7 +57,7 @@ px4_add_board(
 		telemetry # all available telemetry drivers
 		test_ppm
 		tone_alarm
-		uavcan
+		# uavcan
 
 	MODULES
 		attitude_estimator_q
