@@ -106,6 +106,10 @@ HelicopterAttitudeControl::parameters_updated()
     _rate_d(1) = _pitch_rate_d.get();
     _rate_ff(1) = _pitch_rate_ff.get();
 
+    _attitude_int_lim(0) = _roll_integ_lim.get();
+    _attitude_int_lim(1) = _pitch_integ_lim.get();
+    _attitude_int_lim(2) = _yaw_rate_integ_lim.get();
+
     /* yaw gains */
     _attitude_p(2) = _yaw_p.get();
     _attitude_i(2) = 0;
@@ -218,9 +222,12 @@ HelicopterAttitudeControl::control_attitude(float dt)
     const float yaw_w = math::constrain(attitude_gain(2) / roll_pitch_gain, 0.f, 1.f);
     attitude_gain(2) = roll_pitch_gain;
 
-    Vector3f att_i_scaled = _attitude_i.emult(pid_attenuations(_rotor_speed_sp));
-    Vector3f att_d_scaled = _attitude_d.emult(pid_attenuations(_rotor_speed_sp));
-    Vector3f attitude_gain_scaled = attitude_gain.emult(pid_attenuations(_rotor_speed_sp));
+    // Vector3f att_i_scaled = _attitude_i.emult(pid_attenuations(_rotor_speed_sp));
+    // Vector3f att_d_scaled = _attitude_d.emult(pid_attenuations(_rotor_speed_sp));
+    // Vector3f attitude_gain_scaled = attitude_gain.emult(pid_attenuations(_rotor_speed_sp));
+    Vector3f att_i_scaled = _attitude_i;
+    Vector3f att_d_scaled = _attitude_d;
+    Vector3f attitude_gain_scaled = attitude_gain;
 
     /* get estimated and desired vehicle attitude */
     Quatf q(_v_att.q);
@@ -759,32 +766,44 @@ HelicopterAttitudeControl::publish_actuator_controls()
 
     if ( _heli_calib_servo.get() > 0 ) {
 
-        _rotor_speed_sp = 0;
         _actual_coll_sp = (coll_max + coll_min) / 2;
-        _att_control(0) = _heli_trim_ail.get();
-        _att_control(1) = _heli_trim_ele.get();
-        _att_control(2) = _heli_trim_rud.get();
+        if (_heli_calib_servo.get() == 1){
+            _att_control(0) = _heli_trim_ail.get();
+            _att_control(1) = _heli_trim_ele.get();
+            _att_control(2) = _heli_trim_rud.get();
+            _rotor_speed_sp = 0;
+        }
 
         if (_heli_calib_servo.get() == 2) {
             _actual_coll_sp = coll_max;
+            _rotor_speed_sp = 0;
         }
 
         if (_heli_calib_servo.get() == 3) {
             _actual_coll_sp = coll_min;
+            _rotor_speed_sp = 0;
         }
 
         if (_heli_calib_servo.get() == 4) {
             _att_control(0) = _heli_trim_ail.get() + _cyclic_gain.get();
+            _rotor_speed_sp = 0;
         }
 
         if (_heli_calib_servo.get() == 5) {
             _att_control(1) = _heli_trim_ele.get() + _cyclic_gain.get();
+            _rotor_speed_sp = 0;
         }
+
+        if (_heli_calib_servo.get() == 6) {
+            _att_control(0) = _heli_trim_ail.get() + _manual_control_sp.y * _cyclic_gain.get();
+            _att_control(1) = _heli_trim_ele.get() - _manual_control_sp.x * _cyclic_gain.get();
+        }
+
         // _actual_coll_sp = 0;
 
     } else {
-        _att_control(0) = _att_control(0)*_cyclic_gain.get() + _heli_trim_ail.get();
-        _att_control(1) = _att_control(1)*_cyclic_gain.get() + _heli_trim_ele.get();
+        _att_control(0) = _att_control(0) * _cyclic_gain.get() + _heli_trim_ail.get();
+        _att_control(1) = _att_control(1) * _cyclic_gain.get() + _heli_trim_ele.get();
         _att_control(2) = _att_control(2) + _heli_trim_rud.get();
     }
 
