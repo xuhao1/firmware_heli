@@ -775,33 +775,31 @@ HelicopterAttitudeControl::publish_actuator_controls()
             _rotor_speed_sp = 0;
         }
 
+        _att_control(0) = 0;
+        _att_control(1) = 0;
+        _att_control(2) = 0;
+        _rotor_speed_sp = 0;
+
         if (_heli_calib_servo.get() == 2) {
             _actual_coll_sp = coll_max;
-            _rotor_speed_sp = 0;
         }
 
         if (_heli_calib_servo.get() == 3) {
             _actual_coll_sp = coll_min;
-            _rotor_speed_sp = 0;
         }
 
         if (_heli_calib_servo.get() == 4) {
             _att_control(0) = cyclic_gain;
-            _rotor_speed_sp = 0;
         }
 
         if (_heli_calib_servo.get() == 5) {
             _att_control(1) = cyclic_gain;
-            _rotor_speed_sp = 0;
         }
 
         if (_heli_calib_servo.get() == 6) {
             _att_control(0) = _heli_trim_ail.get() + _manual_control_sp.y * cyclic_gain;
             _att_control(1) = _heli_trim_ele.get() - _manual_control_sp.x * cyclic_gain;
         }
-
-        // _actual_coll_sp = 0;
-
     } else {
         _att_control(0) = math::constrain(_att_control(0) * _cyclic_gain.get() + _heli_trim_ail.get(), -cyclic_gain, cyclic_gain);
         _att_control(1) = math::constrain(_att_control(1) * _cyclic_gain.get() + _heli_trim_ele.get(), -cyclic_gain, cyclic_gain);
