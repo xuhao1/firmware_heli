@@ -763,6 +763,7 @@ HelicopterAttitudeControl::publish_actuator_controls()
     float coll_max = _heli_coll_max.get();
     float coll_min = _heli_coll_min.get();
     _actual_coll_sp = (coll_max - coll_min) * _coll_sp + coll_min;
+    float cyclic_gain = _cyclic_gain.get();
 
     if ( _heli_calib_servo.get() > 0 ) {
 
@@ -785,25 +786,25 @@ HelicopterAttitudeControl::publish_actuator_controls()
         }
 
         if (_heli_calib_servo.get() == 4) {
-            _att_control(0) = _heli_trim_ail.get() + _cyclic_gain.get();
+            _att_control(0) = cyclic_gain;
             _rotor_speed_sp = 0;
         }
 
         if (_heli_calib_servo.get() == 5) {
-            _att_control(1) = _heli_trim_ele.get() + _cyclic_gain.get();
+            _att_control(1) = cyclic_gain;
             _rotor_speed_sp = 0;
         }
 
         if (_heli_calib_servo.get() == 6) {
-            _att_control(0) = _heli_trim_ail.get() + _manual_control_sp.y * _cyclic_gain.get();
-            _att_control(1) = _heli_trim_ele.get() - _manual_control_sp.x * _cyclic_gain.get();
+            _att_control(0) = _heli_trim_ail.get() + _manual_control_sp.y * cyclic_gain;
+            _att_control(1) = _heli_trim_ele.get() - _manual_control_sp.x * cyclic_gain;
         }
 
         // _actual_coll_sp = 0;
 
     } else {
-        _att_control(0) = _att_control(0) * _cyclic_gain.get() + _heli_trim_ail.get();
-        _att_control(1) = _att_control(1) * _cyclic_gain.get() + _heli_trim_ele.get();
+        _att_control(0) = math::constrain(_att_control(0) * _cyclic_gain.get() + _heli_trim_ail.get(), -cyclic_gain, cyclic_gain);
+        _att_control(1) = math::constrain(_att_control(1) * _cyclic_gain.get() + _heli_trim_ele.get(), -cyclic_gain, cyclic_gain);
         _att_control(2) = _att_control(2) + _heli_trim_rud.get();
     }
 
